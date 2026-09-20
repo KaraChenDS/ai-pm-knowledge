@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="description" content="AI 产品经理知识体系学习地图：硬实力 + 软实力 + 社会化实践行动计划，支持学习打卡与进度追踪。" />
+<title>AI 产品经理知识体系 · 学习地图</title>
+<style>
+  :root{
+    --bg:#f4f5fb; --surface:#ffffff; --surface-2:#f8f9ff; --text:#16182b; --muted:#6b7089;
+    --border:#e7e9f4; --shadow:0 6px 24px rgba(30,34,80,.07); --shadow-lg:0 14px 44px rgba(30,34,80,.13);
+    --hard:#6366f1; --soft:#ec4899; --practice:#10b981; --accent:#6366f1;
+    --ring-track:#eceefb; --chip:#eef0fb;
+  }
+  [data-theme="dark"]{
+    --bg:#0d0e1a; --surface:#171827; --surface-2:#1e2033; --text:#eef0fb; --muted:#9aa0c0;
+    --border:#262a44; --shadow:0 6px 24px rgba(0,0,0,.4); --shadow-lg:0 14px 44px rgba(0,0,0,.55);
+    --ring-track:#24273d; --chip:#23263b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.6;
+    -webkit-font-smoothing:antialiased; transition:background .3s,color .3s;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 18px 80px}
+
+  /* Header */
+  header.hero{
+    position:relative; overflow:hidden; color:#fff;
+    background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 45%,#ec4899 100%);
+    padding:34px 0 96px; margin-bottom:-64px;
+  }
+  header.hero::after{
+    content:""; position:absolute; inset:0;
+    background:radial-gradient(900px 320px at 18% -10%,rgba(255,255,255,.28),transparent 60%);
+  }
+  .hero-inner{position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:0 18px;display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .hero h1{font-size:26px;font-weight:800;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+  .hero p{opacity:.92;font-size:13.5px;margin-top:6px;max-width:520px}
+  .hero-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .icon-btn{
+    background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.32);color:#fff;
+    width:38px;height:38px;border-radius:11px;cursor:pointer;font-size:16px;display:grid;place-items:center;
+    transition:.2s; backdrop-filter:blur(6px);
+  }
+  .icon-btn:hover{background:rgba(255,255,255,.32);transform:translateY(-1px)}
+
+  /* Overall ring card */
+  .ring-card{
+    position:relative;z-index:3;background:var(--surface);border-radius:20px;box-shadow:var(--shadow-lg);
+    padding:18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;border:1px solid var(--border);
+  }
+  .ring{width:96px;height:96px;flex:0 0 auto;position:relative}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .pct{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:20px}
+  .ring-meta{flex:1;min-width:200px}
+  .ring-meta h2{font-size:16px;margin-bottom:8px}
+  .stat-row{display:flex;gap:18px;flex-wrap:wrap}
+  .stat{display:flex;flex-direction:column}
+  .stat b{font-size:20px;line-height:1.2}
+  .stat span{font-size:11.5px;color:var(--muted)}
+
+  /* Nav */
+  nav.tabs{position:sticky;top:0;z-index:20;display:flex;gap:6px;margin:22px 0 18px;padding:6px;
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow-x:auto}
+  nav.tabs button{
+    flex:1;min-width:max-content;border:0;background:transparent;color:var(--muted);font-size:14px;font-weight:600;
+    padding:10px 16px;border-radius:10px;cursor:pointer;transition:.2s;white-space:nowrap;display:flex;align-items:center;gap:7px;justify-content:center
+  }
+  nav.tabs button:hover{color:var(--text);background:var(--surface-2)}
+  nav.tabs button.active{color:#fff;background:var(--accent)}
+  nav.tabs button .dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.5}
+
+  /* Toolbar */
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .search{flex:1;min-width:200px;position:relative}
+  .search input{width:100%;padding:11px 14px 11px 38px;border-radius:12px;border:1px solid var(--border);
+    background:var(--surface);color:var(--text);font-size:14px;outline:none;transition:.2s}
+  .search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.14)}
+  .search .ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.5}
+  .chips{display:flex;gap:6px}
+  .chip{padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);
+    color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
+  .chip:hover{color:var(--text)}
+  .chip.active{background:var(--chip);color:var(--accent);border-color:transparent}
+
+  /* Pillar intro */
+  .pillar-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+  .pillar-emoji{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;font-size:26px;color:#fff;flex:0 0 auto}
+  .pillar-head h2{font-size:20px}
+  .pillar-head p{font-size:13px;color:var(--muted)}
+  .pillar-prog{margin-left:auto;text-align:right;min-width:140px}
+  .bar{height:9px;border-radius:6px;background:var(--ring-track);overflow:hidden;margin-top:6px}
+  .bar > i{display:block;height:100%;border-radius:6px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+  /* Group + cards */
+  .group{margin-bottom:26px}
+  .group-title{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;margin-bottom:12px}
+  .group-title .g-ic{font-size:18px}
+  .group-title .count{font-size:11.5px;font-weight:600;color:var(--muted);background:var(--chip);padding:2px 9px;border-radius:20px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+  .card{
+    position:relative;background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:14px 15px;
+    cursor:pointer;transition:.18s;display:flex;gap:12px;align-items:flex-start;box-shadow:var(--shadow)
+  }
+  .card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:var(--accent-soft,var(--border))}
+  .card.done{background:var(--surface-2)}
+  .card.done .c-title{text-decoration:line-through;opacity:.62}
+  .check{width:23px;height:23px;border-radius:8px;border:2px solid var(--border);flex:0 0 auto;margin-top:1px;
+    display:grid;place-items:center;transition:.2s;color:#fff;font-size:13px}
+  .card.done .check{background:var(--pc,var(--accent));border-color:var(--pc,var(--accent))}
+  .c-body{flex:1;min-width:0}
+  .c-title{font-size:14.5px;font-weight:650;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .c-desc{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .c-foot{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--chip);color:var(--accent)}
+  .when{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px}
+  .done-date{font-size:11px;color:var(--pc,var(--accent));font-weight:600;display:flex;align-items:center;gap:4px}
+  .note-btn{margin-left:auto;border:0;background:transparent;cursor:pointer;font-size:14px;opacity:.45;transition:.2s;padding:2px 4px;border-radius:6px}
+  .note-btn:hover{opacity:1;background:var(--chip)}
+  .note-btn.has{opacity:1}
+  .note-box{margin-top:9px}
+  .note-box textarea{width:100%;min-height:56px;border-radius:10px;border:1px solid var(--border);background:var(--bg);
+    color:var(--text);padding:8px 10px;font-size:12.5px;font-family:inherit;resize:vertical;outline:none}
+  .note-box textarea:focus{border-color:var(--accent)}
+
+  /* Dashboard */
+  .pillars-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:24px}
+  .pillar-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;cursor:pointer;
+    transition:.2s;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .pillar-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+  .pillar-card .pc-emoji{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font-size:23px;color:#fff;margin-bottom:12px}
+  .pillar-card h3{font-size:17px;margin-bottom:2px}
+  .pillar-card .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+  .pillar-card .pc-stat{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:5px}
+  .pillar-card .pc-stat b{color:var(--text);font-size:13px}
+  .glow{position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;opacity:.13;filter:blur(6px)}
+
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:var(--shadow);margin-bottom:18px}
+  .panel h3{font-size:15px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .next-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border)}
+  .next-item .ni-emoji{font-size:22px}
+  .next-item b{font-size:14px}
+  .next-item span{font-size:12px;color:var(--muted)}
+  .go-btn{margin-left:auto;background:var(--accent);color:#fff;border:0;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;white-space:nowrap}
+  .go-btn:hover{filter:brightness(1.08)}
+  .recent{display:flex;flex-direction:column;gap:8px}
+  .recent-row{display:flex;align-items:center;gap:10px;font-size:13px;padding:8px 10px;border-radius:10px;background:var(--surface-2)}
+  .recent-row .rk{color:var(--muted);font-size:11.5px;margin-left:auto;white-space:nowrap}
+  .empty{color:var(--muted);font-size:13px;text-align:center;padding:18px}
+  .tips{font-size:12.5px;color:var(--muted);line-height:1.9}
+  .tips b{color:var(--text)}
+
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:30px;line-height:1.8}
+
+  /* Toast */
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);
+    padding:11px 20px;border-radius:12px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.3s;z-index:99;box-shadow:var(--shadow-lg)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .hidden{display:none !important}
+  @media(max-width:560px){
+    .hero h1{font-size:21px}.hero p{font-size:12.5px}
+    .pillar-prog{margin-left:0;text-align:left;width:100%}
+    .ring-card{padding:16px}
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <h1>🤖 AI 产品经理知识体系</h1>
+      <p>硬实力 × 软实力 × 社会化实践 —— 一张可打卡、可追踪的成长地图。</p>
+    </div>
+    <div class="hero-actions">
+      <button class="icon-btn" id="themeBtn" title="切换深浅色">🌙</button>
+      <button class="icon-btn" id="exportBtn" title="导出进度">⬇️</button>
+      <button class="icon-btn" id="importBtn" title="导入进度">⬆️</button>
+      <button class="icon-btn" id="resetBtn" title="重置全部">🗑️</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="ring-card">
+    <div class="ring">
+      <svg width="96" height="96">
+        <circle cx="48" cy="48" r="42" fill="none" stroke="var(--ring-track)" stroke-width="9"/>
+        <circle id="ringFill" cx="48" cy="48" r="42" fill="none" stroke="url(#grad)" stroke-width="9"
+                stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9" style="transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)"/>
+        <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#ec4899"/>
+        </linearGradient></defs>
+      </svg>
+      <div class="pct" id="ringPct">0%</div>
+    </div>
+    <div class="ring-meta">
+      <h2>总体学习进度</h2>
+      <div class="stat-row">
+        <div class="stat"><b id="statDone">0</b><span>已掌握</span></div>
+        <div class="stat"><b id="statTotal">0</b><span>知识项</span></div>
+        <div class="stat"><b id="statWeek">0</b><span>近 7 天打卡</span></div>
+        <div class="stat"><b id="statStreak">0</b><span>累计天数</span></div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="dashboard" class="active">📊 总览</button>
+    <button data-tab="hard">🧠 硬实力</button>
+    <button data-tab="soft">💬 软实力</button>
+    <button data-tab="practice">🌐 实践行动</button>
+  </nav>
+
+  <div id="view"></div>
+
+  <footer>
+    进度自动保存在本设备浏览器（localStorage）。跨设备同步请用右上角 ⬇️ 导出 / ⬆️ 导入。<br/>
+    AI 产品经理成长地图 · 持续迭代中
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="fileInput" accept="application/json" class="hidden" />
+
+<script>
+/* ============ 数据 ============ */
+const PILLARS = [
+  {
+    id:"hard", name:"硬实力", sub:"专业技术能力", icon:"🧠", color:"#6366f1",
+    groups:[
+      {name:"AI / 机器学习基础", icon:"📐", items:[
+        {t:"机器学习核心概念", d:"监督/无监督/强化学习、过拟合、损失函数、准确率/召回/F1 等评估指标"},
+        {t:"深度学习与神经网络", d:"CNN / RNN / Transformer、注意力机制、预训练范式"},
+        {t:"自然语言处理 NLP", d:"分词、词向量、语义理解、文本生成与摘要"},
+        {t:"计算机视觉与多模态", d:"图像分类/检测/分割，图文语音视频跨模态理解"},
+      ]},
+      {name:"大模型与生成式 AI（核心）", icon:"🚀", items:[
+        {t:"LLM 原理与能力边界", d:"Token 机制、上下文窗口、涌现能力、幻觉成因与规避"},
+        {t:"Prompt Engineering", d:"提示词设计、Few-shot、思维链 CoT、结构化输出"},
+        {t:"RAG 检索增强生成", d:"Embedding、向量数据库、知识库构建、召回与重排"},
+        {t:"Agent 智能体", d:"Function Calling、ReAct、多 Agent 协作、工作流编排"},
+        {t:"模型微调与训练", d:"SFT、LoRA、RLHF、数据集构建、训练成本评估"},
+        {t:"多模态生成", d:"文生图/视频、语音合成 TTS、跨模态应用落地"},
+        {t:"AI 评测体系", d:"Benchmark、效果评估、A/B、人工评测、安全对齐"},
+      ]},
+      {name:"数据能力", icon:"📊", items:[
+        {t:"数据分析与 SQL", d:"取数、漏斗/留存分析、指标体系搭建"},
+        {t:"数据标注与治理", d:"标注规范、数据质量、数据闭环迭代"},
+        {t:"实验与因果推断", d:"A/B 实验设计、北极星指标、显著性判断"},
+      ]},
+      {name:"技术与工程基础", icon:"🔧", items:[
+        {t:"API 与系统集成", d:"RESTful、鉴权、限流、Webhook、SDK 对接"},
+        {t:"系统架构认知", d:"前后端、微服务、缓存、消息队列、可用性"},
+        {t:"模型部署与 MLOps", d:"推理服务、延迟与吞吐优化、成本、线上监控"},
+        {t:"安全合规与伦理", d:"数据隐私、内容安全、AI 伦理、生成式 AI 管理办法 / GDPR"},
+      ]},
+      {name:"产品基本功", icon:"📋", items:[
+        {t:"需求分析与 PRD", d:"用户故事、需求优先级、PRD 结构化撰写"},
+        {t:"用户研究", d:"访谈、问卷、可用性测试、用户画像与旅程"},
+        {t:"原型与交互设计", d:"Figma / Axure、信息架构、交互流程"},
+        {t:"AI 产品交互范式", d:"人机协同、不确定性设计、可解释性、反馈闭环"},
+      ]},
+      {name:"商业化能力", icon:"💰", items:[
+        {t:"成本核算", d:"Token / 推理成本、毛利模型、单位经济"},
+        {t:"定价与商业模式", d:"订阅 / 按量 / 增值、变现路径设计"},
+        {t:"价值与 ROI 评估", d:"收益测算、投入产出、商业论证"},
+      ]},
+    ]
+  },
+  {
+    id:"soft", name:"软实力", sub:"获客 · 沟通 · 影响力", icon:"💬", color:"#ec4899",
+    groups:[
+      {name:"获客与增长", icon:"📈", items:[
+        {t:"增长黑客方法论", d:"AARRR 海盗模型、增长实验、病毒裂变"},
+        {t:"用户运营", d:"拉新 / 留存 / 促活、用户分层与生命周期"},
+        {t:"内容营销", d:"内容策划、SEO / ASO、社媒矩阵运营"},
+        {t:"渠道与投放", d:"渠道评估、买量投放、ROI 优化"},
+        {t:"社区与私域", d:"社群运营、私域流量、KOL / 达人合作"},
+      ]},
+      {name:"沟通与表达", icon:"🗣️", items:[
+        {t:"结构化表达", d:"金字塔原理、结论先行、汇报逻辑"},
+        {t:"演讲与演示", d:"产品路演、Demo 展示、讲故事"},
+        {t:"跨部门协作", d:"与研发 / 设计 / 运营 / 管理层对齐"},
+        {t:"谈判与说服", d:"资源争取、需求博弈、冲突化解"},
+        {t:"商务写作", d:"PRD、商业计划、复盘报告"},
+      ]},
+      {name:"用户洞察与共情", icon:"❤️", items:[
+        {t:"用户访谈技巧", d:"深挖真实需求、避免诱导式提问"},
+        {t:"需求洞察", d:"从现象到本质、痛点与场景挖掘"},
+        {t:"同理心与用户视角", d:"站在用户立场做产品决策"},
+      ]},
+      {name:"领导力与项目管理", icon:"🧭", items:[
+        {t:"项目管理", d:"进度 / 风险 / 资源、敏捷 Scrum、里程碑"},
+        {t:"团队领导", d:"目标对齐、激励赋能、关键决策"},
+        {t:"向上管理", d:"管理预期、争取支持、汇报节奏"},
+        {t:"决策与优先级", d:"要事第一、取舍框架"},
+      ]},
+      {name:"个人品牌与影响力", icon:"⭐", items:[
+        {t:"行业认知", d:"跟踪 AI 前沿、竞品与行业分析"},
+        {t:"个人 IP 打造", d:"公众号 / 知乎 / 小红书 / B站、技术写作"},
+        {t:"人脉网络", d:"行业社群、导师、同行交流"},
+        {t:"思维模型", d:"第一性原理、批判性思维、系统思考"},
+      ]},
+    ]
+  },
+  {
+    id:"practice", name:"社会化实践行动计划", sub:"证书 · 峰会 · 社区实战", icon:"🌐", color:"#10b981",
+    groups:[
+      {name:"证书与系统学习", icon:"🎓", tag:"证书", items:[
+        {t:"DeepLearning.AI 系列课", d:"Andrew Ng《AI for Everyone》《Generative AI for Everyone》《Prompt Engineering》", when:"1–2 个月"},
+        {t:"云厂商 AI 认证", d:"AWS AI Practitioner / Azure AI-900 / 阿里云 ACA·ACP / GCP ML Engineer", when:"2–3 个月"},
+        {t:"项目管理认证", d:"PMP / Google PM Certificate / 敏捷 CSM", when:"3 个月"},
+        {t:"国内职业认证", d:"人工智能训练师（职业技能等级）/ 软考系统分析师 / 工信部 AI 证书", when:"按需"},
+        {t:"AI 产品经理课程", d:"Coursera·edX 纳米学位、极客时间、三节课、起点课堂", when:"持续"},
+      ]},
+      {name:"行业峰会与大会", icon:"🎤", tag:"峰会", items:[
+        {t:"世界人工智能大会 WAIC", d:"上海 · 每年 7 月，全球 AI 顶级风向标", when:"7 月"},
+        {t:"云栖大会", d:"杭州 · 9 月，阿里云技术与产业生态", when:"9 月"},
+        {t:"大厂开发者大会", d:"百度 Create / 腾讯全球数字生态 / 华为 HDC", when:"全年"},
+        {t:"技术架构大会", d:"ArchSummit / QCon / GMTC", when:"全年"},
+        {t:"学术前沿会议", d:"NeurIPS / ICML / CVPR，看论文与技术趋势", when:"关注"},
+        {t:"产品类大会", d:"Mind the Product / ProductCon / 中国产品经理大会", when:"全年"},
+      ]},
+      {name:"社区与实战", icon:"🤝", tag:"实践", items:[
+        {t:"开源与社区贡献", d:"GitHub 参与 AI 项目、HuggingFace 社区", when:"持续"},
+        {t:"技术写作输出", d:"公众号 / 知乎 / 博客沉淀 AI 产品方法论", when:"每周"},
+        {t:"行业社群", d:"人人都是产品经理、PMTalk、AI 产品经理社群", when:"持续"},
+        {t:"Hackathon 黑客松", d:"参加 AI 黑客松、创新创业大赛", when:"每季度"},
+        {t:"线下 Meetup", d:"城市 AI / 产品沙龙、读书会", when:"每月"},
+        {t:"实战项目", d:"从 0 到 1 做 AI 产品 Demo、参与真实落地项目", when:"持续"},
+      ]},
+    ]
+  }
+];
+
+/* ============ 状态 ============ */
+const STORE_KEY = "aippm_progress_v1";
+const THEME_KEY = "aippm_theme";
+let progress = {};   // id -> {done, ts, note}
+let activeTab = "dashboard";
+let filter = "all";  // all | todo | done
+let query = "";
+
+function loadProgress(){
+  try{ progress = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }catch(e){ progress = {}; }
+}
+function saveProgress(){ localStorage.setItem(STORE_KEY, JSON.stringify(progress)); }
+
+function itemId(pid, gi, ii){ return pid + "-" + gi + "-" + ii; }
+function allItems(){
+  const out = [];
+  PILLARS.forEach(p => p.groups.forEach((g, gi) => g.items.forEach((it, ii) => {
+    out.push({ id: itemId(p.id, gi, ii), pillar:p, group:g, item:it, gi, ii });
+  })));
+  return out;
+}
+function pillarItems(pid){ return allItems().filter(x => x.pillar.id === pid); }
+function isDone(id){ return !!(progress[id] && progress[id].done); }
+
+/* ============ 工具 ============ */
+const $ = sel => document.querySelector(sel);
+function fmtDate(ts){ const d=new Date(ts); return (d.getMonth()+1)+"月"+d.getDate()+"日"; }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._x); t._x=setTimeout(()=>t.classList.remove("show"),1900); }
+function esc(s){ return (s||"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ============ 渲染 ============ */
+function render(){
+  renderRing();
+  if(activeTab === "dashboard") renderDashboard();
+  else renderPillar(activeTab);
+}
+
+function renderRing(){
+  const items = allItems();
+  const done = items.filter(x => isDone(x.id)).length;
+  const total = items.length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  const C = 263.9;
+  $("#ringFill").style.strokeDashoffset = String(C - C*pct/100);
+  $("#ringPct").textContent = pct + "%";
+  $("#statDone").textContent = done;
+  $("#statTotal").textContent = total;
+  // 近7天
+  const weekAgo = Date.now() - 7*864e5;
+  $("#statWeek").textContent = items.filter(x => progress[x.id] && progress[x.id].ts >= weekAgo).length;
+  // 累计天数（去重打卡日期）
+  const days = new Set(Object.values(progress).filter(p=>p.done).map(p=>new Date(p.ts).toDateString()));
+  $("#statStreak").textContent = days.size;
+}
+
+function renderDashboard(){
+  const items = allItems();
+  const pillarsHtml = PILLARS.map(p=>{
+    const its = pillarItems(p.id);
+    const dn = its.filter(x=>isDone(x.id)).length;
+    const pc = its.length? Math.round(dn/its.length*100):0;
+    return `<div class="pillar-card" onclick="goTab('${p.id}')">
+      <div class="glow" style="background:${p.color}"></div>
+      <div class="pc-emoji" style="background:${p.color}">${p.icon}</div>
+      <h3>${p.name}</h3>
+      <div class="sub">${p.sub}</div>
+      <div class="pc-stat"><span>完成度</span><b>${dn}/${its.length} · ${pc}%</b></div>
+      <div class="bar"><i style="width:${pc}%;background:${p.color}"></i></div>
+    </div>`;
+  }).join("");
+
+  // 下一个待学（按 pillar 顺序）
+  const next = items.find(x=>!isDone(x.id));
+  const nextHtml = next
+    ? `<div class="next-item">
+        <div class="ni-emoji">${next.pillar.icon}</div>
+        <div><b>${esc(next.item.t)}</b><br/><span>${esc(next.pillar.name)} · ${esc(next.group.name)}</span></div>
+        <button class="go-btn" onclick="goTab('${next.pillar.id}')">去学习 →</button>
+      </div>`
+    : `<div class="empty">🎉 全部知识项已掌握，太厉害了！</div>`;
+
+  // 最近打卡
+  const recent = items.filter(x=>isDone(x.id)).sort((a,b)=>progress[b.id].ts-progress[a.id].ts).slice(0,6);
+  const recentHtml = recent.length
+    ? `<div class="recent">`+recent.map(x=>`<div class="recent-row">
+        <span>${x.pillar.icon}</span><span>${esc(x.item.t)}</span>
+        <span class="rk">${fmtDate(progress[x.id].ts)}</span></div>`).join("")+`</div>`
+    : `<div class="empty">还没有打卡记录，点击任意知识项开始学习 ✍️</div>`;
+
+  $("#view").innerHTML = `
+    <div class="pillars-grid">${pillarsHtml}</div>
+    <div class="panel">
+      <h3>🎯 下一步建议</h3>
+      ${nextHtml}
+    </div>
+    <div class="panel">
+      <h3>🕒 最近打卡</h3>
+      ${recentHtml}
+    </div>
+    <div class="panel">
+      <h3>💡 使用说明</h3>
+      <div class="tips">
+        · 点击任意知识卡片即可 <b>打卡</b>，再次点击取消。<br/>
+        · 卡片右下角 <b>📝</b> 可记录学习笔记与心得。<br/>
+        · 进度自动保存在 <b>本设备浏览器</b>；换设备用右上角 <b>⬇️ 导出 / ⬆️ 导入</b> 迁移。<br/>
+        · 顶部 <b>🌙</b> 切换深浅色，适配电脑与手机。
+      </div>
+    </div>`;
+}
+
+function renderPillar(pid){
+  const p = PILLARS.find(x=>x.id===pid);
+  const its = pillarItems(pid);
+  const dn = its.filter(x=>isDone(x.id)).length;
+  const pc = its.length? Math.round(dn/its.length*100):0;
+  const q = query.trim().toLowerCase();
+
+  const groupsHtml = p.groups.map((g, gi)=>{
+    const cards = g.items.map((it, ii)=>{
+      const id = itemId(pid, gi, ii);
+      const done = isDone(id);
+      const st = progress[id] || {};
+      // 过滤
+      if(filter==="todo" && done) return "";
+      if(filter==="done" && !done) return "";
+      if(q){
+        const hay = (it.t+" "+it.d+" "+g.name).toLowerCase();
+        if(!hay.includes(q)) return "";
+      }
+      const tagHtml = g.tag? `<span class="tag">${g.tag}</span>`:"";
+      const whenHtml = it.when? `<span class="when">🗓️ ${esc(it.when)}</span>`:"";
+      const dateHtml = done? `<span class="done-date">✓ ${fmtDate(st.ts)}</span>`:"";
+      const noteHtml = st.note? `<span class="note-flag" title="有笔记">📝</span>`:"";
+      return `<div class="card ${done?'done':''}" style="--pc:${p.color}" data-id="${id}" onclick="toggleItem('${id}')">
+        <div class="check">${done?'✓':''}</div>
+        <div class="c-body">
+          <div class="c-title">${esc(it.t)} ${noteHtml}</div>
+          <div class="c-desc">${esc(it.d)}</div>
+          <div class="c-foot">${tagHtml}${whenHtml}${dateHtml}
+            <button class="note-btn ${st.note?'has':''}" title="学习笔记" onclick="event.stopPropagation();toggleNote('${id}')">📝</button>
+          </div>
+          <div class="note-box ${st._open?'':'hidden'}" id="nb-${id}" onclick="event.stopPropagation()">
+            <textarea placeholder="记录学习笔记 / 心得 / 链接…" oninput="setNote('${id}',this.value)">${esc(st.note||"")}</textarea>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+    const gDone = g.items.filter((_,ii)=>isDone(itemId(pid,gi,ii))).length;
+    if(!cards) return "";
+    return `<div class="group">
+      <div class="group-title"><span class="g-ic">${g.icon}</span>${esc(g.name)}
+        <span class="count">${gDone}/${g.items.length}</span></div>
+      <div class="cards">${cards}</div>
+    </div>`;
+  }).join("");
+
+  $("#view").innerHTML = `
+    <div class="pillar-head">
+      <div class="pillar-emoji" style="background:${p.color}">${p.icon}</div>
+      <div><h2>${p.name}</h2><p>${p.sub}</p></div>
+      <div class="pillar-prog">
+        <div style="font-size:13px;color:var(--muted)">完成 <b style="color:${p.color}">${dn}</b>/${its.length} · ${pc}%</div>
+        <div class="bar"><i style="width:${pc}%;background:${p.color}"></i></div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="search"><span class="ic">🔍</span>
+        <input id="searchInput" placeholder="搜索知识点…" value="${esc(query)}" oninput="onSearch(this.value)"/></div>
+      <div class="chips">
+        <button class="chip ${filter==='all'?'active':''}" onclick="setFilter('all')">全部</button>
+        <button class="chip ${filter==='todo'?'active':''}" onclick="setFilter('todo')">未学</button>
+        <button class="chip ${filter==='done'?'active':''}" onclick="setFilter('done')">已学</button>
+      </div>
+    </div>
+    ${groupsHtml || `<div class="empty">没有匹配的知识点 🔍</div>`}`;
+}
+
+/* ============ 交互 ============ */
+function toggleItem(id){
+  const cur = progress[id] || {};
+  if(cur.done){ delete progress[id]; }
+  else { progress[id] = { done:true, ts:Date.now(), note:cur.note||"", _open:cur._open||false }; }
+  saveProgress(); render();
+}
+function toggleNote(id){
+  const cur = progress[id] || { done:false, ts:Date.now(), note:"" };
+  cur._open = !cur._open;
+  progress[id] = cur; saveProgress(); renderPillar(activeTab);
+  const ta = document.querySelector("#nb-"+CSS.escape(id)+" textarea"); if(ta) ta.focus();
+}
+function setNote(id, val){
+  const cur = progress[id] || { done:false, ts:Date.now() };
+  cur.note = val; progress[id] = cur; saveProgress();
+  const btn = document.querySelector(`.card[data-id="${id}"] .note-btn`); if(btn) btn.classList.toggle("has", !!val);
+}
+function setFilter(f){ filter=f; renderPillar(activeTab); }
+function onSearch(v){ query=v; const pos=v.length; renderPillar(activeTab);
+  const inp=$("#searchInput"); if(inp){ inp.focus(); try{inp.setSelectionRange(pos,pos);}catch(e){} } }
+function goTab(tab){ activeTab=tab; filter="all"; query="";
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
+  render(); window.scrollTo({top:0,behavior:"smooth"}); }
+
+/* ============ 导入导出 / 主题 / 重置 ============ */
+function exportData(){
+  const blob = new Blob([JSON.stringify(progress,null,2)], {type:"application/json"});
+  const a = document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="ai-pm-progress-"+new Date().toISOString().slice(0,10)+".json"; a.click();
+  URL.revokeObjectURL(a.href); toast("进度已导出 ⬇️");
+}
+function importData(file){
+  const r = new FileReader();
+  r.onload = e => { try{ const d=JSON.parse(e.target.result); if(typeof d!=="object") throw 0;
+      progress=d; saveProgress(); render(); toast("进度已导入 ⬆️"); }catch(err){ toast("文件格式错误 ❌"); } };
+  r.readAsText(file);
+}
+function resetAll(){ if(confirm("确定清空所有打卡与笔记？此操作不可撤销。")){ progress={}; saveProgress(); render(); toast("已重置 🗑️"); } }
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute("data-theme");
+  const nxt = cur==="dark"?"light":"dark";
+  document.documentElement.setAttribute("data-theme", nxt);
+  localStorage.setItem(THEME_KEY, nxt);
+  $("#themeBtn").textContent = nxt==="dark"?"☀️":"🌙";
+}
+
+/* ============ 启动 ============ */
+document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>goTab(b.dataset.tab)));
+$("#themeBtn").onclick=toggleTheme;
+$("#exportBtn").onclick=exportData;
+$("#importBtn").onclick=()=>$("#fileInput").click();
+$("#fileInput").onchange=e=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=""; };
+$("#resetBtn").onclick=resetAll;
+
+(function init(){
+  const savedTheme = localStorage.getItem(THEME_KEY) || (window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+  document.documentElement.setAttribute("data-theme", savedTheme);
+  $("#themeBtn").textContent = savedTheme==="dark"?"☀️":"🌙";
+  loadProgress(); render();
+})();
+</script>
+</body>
+</html>
