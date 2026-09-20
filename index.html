@@ -162,6 +162,13 @@
   .sync-row input:focus{border-color:var(--accent)}
   .sync-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
   .sync-status{font-size:12.5px;color:var(--muted);margin-bottom:8px}
+  .goal-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:var(--surface-2);margin-bottom:7px}
+  .goal-row .g-text{flex:1;font-size:13.5px}
+  .goal-row.done .g-text{text-decoration:line-through;opacity:.6}
+  .goal-row .check{cursor:pointer}
+  .goal-row.done .check{background:#10b981;border-color:#10b981}
+  .banner{display:flex;align-items:center;gap:10px;background:#f59e0b;color:#fff;border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:600;margin-bottom:14px;flex-wrap:wrap}
+  .banner .go-btn{margin-left:auto;background:rgba(255,255,255,.22)}
 
   footer{text-align:center;color:var(--muted);font-size:12px;margin-top:30px;line-height:1.8}
 
@@ -223,6 +230,7 @@
     <button data-tab="hard">🧠 硬实力</button>
     <button data-tab="soft">💬 软实力</button>
     <button data-tab="practice">🌐 实践行动</button>
+    <button data-tab="sprint">🎯 冲刺</button>
   </nav>
 
   <div id="view"></div>
@@ -381,6 +389,7 @@ function esc(s){ return (s||"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;","
 function render(){
   renderRing();
   if(activeTab === "dashboard") renderDashboard();
+  else if(activeTab === "sprint") renderSprint();
   else renderPillar(activeTab);
 }
 
@@ -599,6 +608,7 @@ async function syncPull(){
     const j=await r.json();
     const remote=JSON.parse(decodeB64(j.content));
     progress=mergeProgress(progress, remote.data||remote);
+    if(remote.plan && (remote.plan._updatedAt||0)>(planState._updatedAt||0)){ planState=remote.plan; localStorage.setItem(PLAN_KEY, JSON.stringify(planState)); }
     localStorage.setItem(STORE_KEY, JSON.stringify(progress));
     render(); updateSyncStatus("已下载并合并云端进度 ✓");
   }catch(e){ updateSyncStatus("下载出错："+e.message); }
@@ -610,7 +620,7 @@ async function syncPush(){
     let sha=null;
     const g=await fetch(syncApiUrl(), {headers:syncHeaders(tok)});
     if(g.ok){ sha=(await g.json()).sha; }
-    const body={ message:"sync: update progress", content:encodeB64(JSON.stringify({updatedAt:Date.now(), data:progress})) };
+    const body={ message:"sync: update progress", content:encodeB64(JSON.stringify({updatedAt:Date.now(), data:progress, plan:planState})) };
     if(sha) body.sha=sha;
     const r=await fetch(syncApiUrl(), {method:"PUT",
       headers:Object.assign({"Content-Type":"application/json"}, syncHeaders(tok)),
@@ -651,6 +661,117 @@ function syncPanelHtml(){
   </div>`;
 }
 
+/* ============ 冲刺 / OKR 计划 ============ */
+const PLAN_KEY="aippm_plan_v1";
+let planState={ sprint:null, weeks:{} };
+function loadPlan(){ try{ planState=JSON.parse(localStorage.getItem(PLAN_KEY))||{sprint:null,weeks:{}}; }catch(e){ planState={sprint:null,weeks:{}}; } }
+function savePlan(){ planState._updatedAt=Date.now(); localStorage.setItem(PLAN_KEY, JSON.stringify(planState)); schedulePush(); }
+function weekIndexNow(){
+  if(!planState.sprint||!planState.sprint.start) return 1;
+  const start=new Date(planState.sprint.start+"T00:00:00").getTime();
+  const idx=Math.floor((Date.now()-start)/(7*864e5))+1;
+  const max=planState.sprint.weeks||4;
+  return Math.min(Math.max(idx,1),max);
+}
+function weekStartISO(wi){ return new Date(new Date(planState.sprint.start+"T00:00:00").getTime()+(wi-1)*7*864e5); }
+function ensureWeek(wi){ if(!planState.weeks[wi]) planState.weeks[wi]={goals:[],reflection:"",reviewedAt:null}; return planState.weeks[wi]; }
+function habitDaysThisWeek(){
+  const ws=weekStartISO(weekIndexNow()).getTime(), we=ws+7*864e5, days=new Set();
+  Object.values(progress).forEach(pp=>{ if(pp.done&&pp.ts>=ws&&pp.ts<we) days.add(new Date(pp.ts).toDateString()); });
+  return days.size;
+}
+function reviewDue(){
+  const wi=weekIndexNow(); if(wi<=1) return false;
+  const prev=planState.weeks[wi-1];
+  return !(prev&&prev.reviewedAt);
+}
+function saveSprintForm(){
+  const name=document.getElementById("spName").value.trim()||"我的冲刺";
+  const start=document.getElementById("spStart").value||new Date().toISOString().slice(0,10);
+  const weeks=parseInt(document.getElementById("spWeeks").value,10)||4;
+  const focus=document.getElementById("spFocus").value.trim();
+  planState.sprint={name,start,weeks,focus};
+  savePlan(); render(); toast("冲刺已保存 🎯");
+}
+function addGoal(){
+  const inp=document.getElementById("goalInput"); const t=inp.value.trim(); if(!t) return;
+  ensureWeek(weekIndexNow()).goals.push({id:"g"+Date.now(),text:t,done:false});
+  inp.value=""; savePlan(); render();
+}
+function toggleGoal(id){
+  const g=ensureWeek(weekIndexNow()).goals.find(x=>x.id===id);
+  if(g){ g.done=!g.done; savePlan(); render(); }
+}
+function delGoal(id){
+  const wk=ensureWeek(weekIndexNow()); wk.goals=wk.goals.filter(x=>x.id!==id); savePlan(); render();
+}
+function doReview(){
+  const wi=weekIndexNow(), wk=ensureWeek(wi);
+  const ta=document.getElementById("reflectInput");
+  wk.reflection=ta?ta.value:wk.reflection; wk.reviewedAt=Date.now();
+  const undone=wk.goals.filter(g=>!g.done).map(g=>g.text);
+  if(undone.length){ const nw=ensureWeek(wi+1); undone.forEach(t=>nw.goals.push({id:"g"+Date.now()+Math.random().toString(16).slice(2),text:t,done:false})); }
+  savePlan(); render(); toast("周复盘完成 ✅ 未完成目标已滚入下周");
+}
+function sprintFormHtml(sp){
+  const today=new Date().toISOString().slice(0,10);
+  return `<div class="sync-row"><input id="spName" placeholder="冲刺名称" value="${esc(sp?sp.name:"")}"/></div>
+    <div class="sync-row"><input id="spFocus" placeholder="聚焦方向（如：大模型与生成式 AI）" value="${esc(sp?sp.focus:"")}"/></div>
+    <div class="sync-row"><input type="date" id="spStart" value="${esc(sp?sp.start:today)}"/><input type="number" id="spWeeks" min="1" max="12" value="${sp?sp.weeks:2}" style="max-width:90px"/></div>
+    <button class="go-btn" onclick="saveSprintForm()">保存冲刺</button>`;
+}
+function renderSprint(){
+  if(!planState.sprint){
+    $("#view").innerHTML=`<div class="panel">
+      <h3>🎯 创建你的第一个冲刺</h3>
+      <div class="tips" style="margin-bottom:12px">建议 2–4 周一个冲刺，聚焦一个知识组（如「大模型与生成式 AI」）。</div>
+      ${sprintFormHtml(null)}
+    </div>`;
+    return;
+  }
+  const sp=planState.sprint, wi=weekIndexNow(), wk=ensureWeek(wi), habit=habitDaysThisWeek(), due=reviewDue();
+  const goalsHtml=wk.goals.length? wk.goals.map(g=>`<div class="goal-row ${g.done?'done':''}">
+      <span class="check" onclick="toggleGoal('${g.id}')">${g.done?'✓':''}</span>
+      <span class="g-text">${esc(g.text)}</span>
+      <button class="note-btn" title="删除" onclick="delGoal('${g.id}')">✕</button>
+    </div>`).join("") : `<div class="empty">本周还没有目标，加 3 个吧 ✍️</div>`;
+  $("#view").innerHTML=`
+    <div class="pillar-head">
+      <div class="pillar-emoji" style="background:#f59e0b">🎯</div>
+      <div><h2>${esc(sp.name)}</h2><p>${esc(sp.focus||"")}</p></div>
+      <div class="pillar-prog">
+        <div style="font-size:13px;color:var(--muted)">第 <b style="color:#f59e0b">${wi}</b> / ${sp.weeks} 周 · 始于 ${esc(sp.start)}</div>
+        <div class="bar"><i style="width:${Math.round(wi/sp.weeks*100)}%;background:#f59e0b"></i></div>
+      </div>
+    </div>
+    ${due?`<div class="banner">📅 上周还没复盘！写下反思并把未完成目标滚入本周。<button class="go-btn" onclick="document.getElementById('reflectBox').scrollIntoView({behavior:'smooth'})">去复盘</button></div>`:""}
+    <div class="panel">
+      <h3>✅ 本周目标（OKR · 建议 3 个）</h3>
+      ${goalsHtml}
+      <div class="sync-row" style="margin-top:10px">
+        <input id="goalInput" placeholder="输入一个本周目标，回车添加…" onkeydown="if(event.key==='Enter')addGoal()"/>
+        <button class="go-btn" onclick="addGoal()">添加</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>🔥 习惯 KPI · 本周打卡</h3>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px"><span>目标 ≥5 天</span><b style="color:var(--text)">${habit} / 5 天</b></div>
+      <div class="bar"><i style="width:${Math.min(habit/5*100,100)}%;background:${habit>=5?'#10b981':'#f59e0b'}"></i></div>
+    </div>
+    <div class="panel" id="reflectBox">
+      <h3>📝 周复盘（本周结束时填写）</h3>
+      <div class="note-box" style="margin:0"><textarea id="reflectInput" placeholder="本周学到什么？卡在哪？下周怎么调整？">${esc(wk.reflection||"")}</textarea></div>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+        <button class="go-btn" onclick="doReview()">完成复盘并滚入下周</button>
+        <span style="font-size:12px;color:var(--muted)">${wk.reviewedAt?"已复盘 "+fmtDate(wk.reviewedAt):"尚未复盘"}</span>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>⚙️ 冲刺设置</h3>
+      ${sprintFormHtml(sp)}
+    </div>`;
+}
+
 /* ============ 启动 ============ */
 document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>goTab(b.dataset.tab)));
 $("#themeBtn").onclick=toggleTheme;
@@ -663,7 +784,8 @@ $("#resetBtn").onclick=resetAll;
   const savedTheme = localStorage.getItem(THEME_KEY) || (window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
   document.documentElement.setAttribute("data-theme", savedTheme);
   $("#themeBtn").textContent = savedTheme==="dark"?"☀️":"🌙";
-  loadProgress(); render();
+  loadProgress(); loadPlan(); render();
+  if(reviewDue()) setTimeout(()=>toast("📅 新的一周：记得做周复盘"),600);
   if(getSyncToken()) syncPull();
 })();
 </script>
