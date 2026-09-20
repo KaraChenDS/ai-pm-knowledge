@@ -152,6 +152,11 @@
   .empty{color:var(--muted);font-size:13px;text-align:center;padding:18px}
   .tips{font-size:12.5px;color:var(--muted);line-height:1.9}
   .tips b{color:var(--text)}
+  .sync-row{display:flex;gap:8px;margin-bottom:10px}
+  .sync-row input{flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;outline:none}
+  .sync-row input:focus{border-color:var(--accent)}
+  .sync-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .sync-status{font-size:12.5px;color:var(--muted);margin-bottom:8px}
 
   footer{text-align:center;color:var(--muted);font-size:12px;margin-top:30px;line-height:1.8}
 
@@ -348,7 +353,7 @@ let query = "";
 function loadProgress(){
   try{ progress = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }catch(e){ progress = {}; }
 }
-function saveProgress(){ localStorage.setItem(STORE_KEY, JSON.stringify(progress)); }
+function saveProgress(){ localStorage.setItem(STORE_KEY, JSON.stringify(progress)); schedulePush(); }
 
 function itemId(pid, gi, ii){ return pid + "-" + gi + "-" + ii; }
 function allItems(){
@@ -444,7 +449,8 @@ function renderDashboard(){
         · 进度自动保存在 <b>本设备浏览器</b>；换设备用右上角 <b>⬇️ 导出 / ⬆️ 导入</b> 迁移。<br/>
         · 顶部 <b>🌙</b> 切换深浅色，适配电脑与手机。
       </div>
-    </div>`;
+    </div>
+    ${syncPanelHtml()}`;
 }
 
 function renderPillar(pid){
@@ -561,6 +567,85 @@ function toggleTheme(){
   $("#themeBtn").textContent = nxt==="dark"?"☀️":"🌙";
 }
 
+/* ============ 云同步 (GitHub 私有仓库) ============ */
+const SYNC_OWNER="KaraChenDS", SYNC_REPO="ai-pm-progress", SYNC_PATH="progress.json";
+const SYNC_TOKEN_KEY="aippm_sync_token", SYNC_AUTO_KEY="aippm_sync_auto";
+let pushTimer=null;
+function getSyncToken(){ return localStorage.getItem(SYNC_TOKEN_KEY)||""; }
+function isSyncAuto(){ return localStorage.getItem(SYNC_AUTO_KEY)!=="0"; }
+function syncApiUrl(){ return "https://api.github.com/repos/"+SYNC_OWNER+"/"+SYNC_REPO+"/contents/"+SYNC_PATH; }
+function syncHeaders(tok){ return {Authorization:"Bearer "+tok, Accept:"application/vnd.github+json"}; }
+function encodeB64(str){ return btoa(unescape(encodeURIComponent(str))); }
+function decodeB64(b64){ return decodeURIComponent(escape(atob(b64.replace(/\s/g,"")))); }
+function updateSyncStatus(msg){ const el=document.getElementById("syncStatus"); if(el) el.textContent=msg; }
+function mergeProgress(local, remote){
+  const out={}; const ids=new Set([...Object.keys(local),...Object.keys(remote)]);
+  ids.forEach(id=>{ const a=local[id], b=remote[id];
+    out[id] = (a&&b) ? (((b.ts||0)>(a.ts||0))?b:a) : (a||b); });
+  return out;
+}
+async function syncPull(){
+  const tok=getSyncToken(); if(!tok){ updateSyncStatus("未配置 Token，请先粘贴并保存。"); return; }
+  updateSyncStatus("正在下载云端进度…");
+  try{
+    const r=await fetch(syncApiUrl(), {headers:syncHeaders(tok)});
+    if(r.status===404){ updateSyncStatus("云端暂无数据，点「上传本地」即可创建。"); return; }
+    if(!r.ok){ updateSyncStatus("下载失败 HTTP "+r.status+"（检查 Token 权限）"); return; }
+    const j=await r.json();
+    const remote=JSON.parse(decodeB64(j.content));
+    progress=mergeProgress(progress, remote.data||remote);
+    localStorage.setItem(STORE_KEY, JSON.stringify(progress));
+    render(); updateSyncStatus("已下载并合并云端进度 ✓");
+  }catch(e){ updateSyncStatus("下载出错："+e.message); }
+}
+async function syncPush(){
+  const tok=getSyncToken(); if(!tok){ updateSyncStatus("未配置 Token，请先粘贴并保存。"); return; }
+  updateSyncStatus("正在上传…");
+  try{
+    let sha=null;
+    const g=await fetch(syncApiUrl(), {headers:syncHeaders(tok)});
+    if(g.ok){ sha=(await g.json()).sha; }
+    const body={ message:"sync: update progress", content:encodeB64(JSON.stringify({updatedAt:Date.now(), data:progress})) };
+    if(sha) body.sha=sha;
+    const r=await fetch(syncApiUrl(), {method:"PUT",
+      headers:Object.assign({"Content-Type":"application/json"}, syncHeaders(tok)),
+      body:JSON.stringify(body)});
+    if(r.ok){ updateSyncStatus("已上传到云端 ✓"); }
+    else{ const e=await r.json().catch(()=>({})); updateSyncStatus("上传失败 HTTP "+r.status+" "+(e.message||"")); }
+  }catch(e){ updateSyncStatus("上传出错："+e.message); }
+}
+function schedulePush(){
+  if(!getSyncToken() || !isSyncAuto()) return;
+  clearTimeout(pushTimer); pushTimer=setTimeout(syncPush, 1500);
+}
+function saveSyncToken(){
+  const v=document.getElementById("syncToken").value.trim();
+  if(v){ localStorage.setItem(SYNC_TOKEN_KEY, v); updateSyncStatus("Token 已保存，正在拉取云端…"); syncPull(); }
+  else{ localStorage.removeItem(SYNC_TOKEN_KEY); updateSyncStatus("Token 已清除。"); }
+  render();
+}
+function toggleSyncAuto(){ localStorage.setItem(SYNC_AUTO_KEY, isSyncAuto()?"0":"1"); render(); }
+function doSyncPull(){ syncPull(); }
+function doSyncPush(){ syncPush(); }
+function syncPanelHtml(){
+  const tok=getSyncToken();
+  return `<div class="panel">
+    <h3>☁️ 多端云同步</h3>
+    <div class="sync-row">
+      <input type="password" id="syncToken" placeholder="${tok?"已配置 Token（重新粘贴可更新）":"粘贴 GitHub Fine-grained PAT"}" value="${esc(tok)}"/>
+      <button class="go-btn" onclick="saveSyncToken()">保存</button>
+    </div>
+    <div class="sync-actions">
+      <button class="chip" onclick="doSyncPull()">⬇ 下载云端</button>
+      <button class="chip" onclick="doSyncPush()">⬆ 上传本地</button>
+      <button class="chip" onclick="toggleSyncAuto()">自动同步：${isSyncAuto()?"开":"关"}</button>
+    </div>
+    <div class="sync-status" id="syncStatus">${tok?"已配置 Token，改动将自动同步。":"未配置 Token。"}</div>
+    <div class="tips">数据存于<b>私有仓库</b> ${SYNC_OWNER}/${SYNC_REPO}，仅你可见；Token 只存本机浏览器。<br/>
+      创建 Token：GitHub → Settings → Developer settings → Fine-grained tokens → 仅选仓库 <b>${SYNC_REPO}</b> → 权限 <b>Contents: Read and write</b>。</div>
+  </div>`;
+}
+
 /* ============ 启动 ============ */
 document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>goTab(b.dataset.tab)));
 $("#themeBtn").onclick=toggleTheme;
@@ -574,6 +659,7 @@ $("#resetBtn").onclick=resetAll;
   document.documentElement.setAttribute("data-theme", savedTheme);
   $("#themeBtn").textContent = savedTheme==="dark"?"☀️":"🌙";
   loadProgress(); render();
+  if(getSyncToken()) syncPull();
 })();
 </script>
 </body>
