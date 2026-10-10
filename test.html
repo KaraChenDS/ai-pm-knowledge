@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>自测 · AI 产品经理知识体系</title>
+<style>
+  :root{--ok:#047857;--bad:#dc2626;--bg:#f4f5fb;--tx:#16182b;--mu:#6b7089;--bd:#e7e9f4}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);line-height:1.6;
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:900px;margin:0 auto;padding:24px 18px 60px}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{font-size:13px;color:var(--mu);margin-bottom:18px}
+  .bar{height:10px;border-radius:6px;background:#e7e9f4;overflow:hidden;margin-bottom:6px}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6366f1,#ec4899);transition:width .25s}
+  .sum{font-size:14px;font-weight:700;margin-bottom:16px}
+  .sum.pass{color:var(--ok)} .sum.fail{color:var(--bad)}
+  .phase{font-size:13px;font-weight:800;color:#4f46e5;margin:18px 0 7px;
+    padding-top:12px;border-top:1px solid var(--bd)}
+  .t{display:flex;gap:9px;align-items:flex-start;font-size:13px;padding:5px 0 5px 4px}
+  .t .i{flex:0 0 auto;font-weight:800}
+  .t.ok .i{color:var(--ok)} .t.no .i{color:var(--bad)}
+  .t.no{background:#fef2f2;border-radius:7px;padding-left:8px}
+  .t.no .m{color:var(--bad);font-weight:600}
+  .note{font-size:12px;color:var(--mu);margin-top:20px;padding-top:14px;border-top:1px solid var(--bd)}
+  iframe{position:absolute;left:-9999px;top:0;width:390px;height:820px;border:0}
+  code{background:#fff;border:1px solid var(--bd);border-radius:5px;padding:1px 5px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>自测 · AI 产品经理知识体系</h1>
+  <div class="sub">在真实浏览器里跑 <code>index.html</code>，逐项断言核心逻辑。每项测试都会重新加载应用，走真实的启动路径。</div>
+  <div class="bar"><i id="pg"></i></div>
+  <div class="sum" id="sum">准备中…</div>
+  <div id="out"></div>
+  <div class="note">
+    需要本地服务器（同源 iframe 才能互相访问）：<br/>
+    <code>python3 -m http.server 8912 --bind 127.0.0.1</code> → 打开 <code>http://127.0.0.1:8912/test.html</code>
+  </div>
+</div>
+<iframe id="app" src="index.html"></iframe>
+<script>
+/* ================= 测试框架 ================= */
+var FRAME=document.getElementById('app');
+var OUT=document.getElementById('out'), SUM=document.getElementById('sum'), PG=document.getElementById('pg');
+var RESULTS=[], PHASES=[], idx=0, started=false;
+
+function dstr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function mondayKey(off){
+  var t=new Date(); t.setHours(0,0,0,0);
+  var dow=(t.getDay()+6)%7; t.setDate(t.getDate()-dow+off*7);
+  return dstr(t);
+}
+function phase(name,seed,check){ PHASES.push({name:name,seed:seed,check:check}); }
+
+function waitReady(cb,tries){
+  tries=tries||0;
+  var w=FRAME.contentWindow;
+  var ready=false;
+  try{ ready = !!(w && w.ITEMS && typeof w.ITEMS==='function' && w.document.getElementById('view')
+                  && w.document.getElementById('view').innerHTML.length>50); }catch(e){}
+  if(ready) return setTimeout(cb,60);
+  if(tries>60) return cb();          // 超时也继续，断言会自然失败
+  setTimeout(function(){ waitReady(cb,tries+1); },50);
+}
+
+function runPhase(){
+  if(idx>=PHASES.length) return done();
+  var p=PHASES[idx++];
+  var w=FRAME.contentWindow;
+  w.localStorage.clear();
+  if(p.seed) Object.keys(p.seed).forEach(function(k){ w.localStorage.setItem(k,p.seed[k]); });
+  w.location.reload();
+  waitReady(function(){
+    var rows=[];
+    try{ rows=p.check(w)||[]; }
+    catch(e){ rows=[['执行异常：'+e.message,false]]; }
+    rows.forEach(function(r){ RESULTS.push({phase:p.name,name:r[0],ok:!!r[1]}); });
+    paint();
+    runPhase();
+  });
+}
+
+function paint(){
+  var groups={},order=[];
+  RESULTS.forEach(function(r){
+    if(!groups[r.phase]){ groups[r.phase]=[]; order.push(r.phase); }
+    groups[r.phase].push(r);
+  });
+  var pass=RESULTS.filter(function(r){return r.ok;}).length;
+  var total=RESULTS.length;
+  var html='';
+  order.forEach(function(g){
+    var gp=groups[g].filter(function(r){return r.ok;}).length;
+    html+='<div class="phase">'+g+' &nbsp;'+gp+'/'+groups[g].length+'</div>';
+    groups[g].forEach(function(r){
+      html+='<div class="t '+(r.ok?'ok':'no')+'"><span class="i">'+(r.ok?'✓':'✕')+'</span><span class="m">'+r.name+'</span></div>';
+    });
+  });
+  OUT.innerHTML=html;
+  SUM.textContent='已完成 '+total+' 项断言 · 通过 '+pass+' · 失败 '+(total-pass);
+  SUM.className='sum '+(total-pass===0&&total>0?'pass':'fail');
+  PG.style.width=Math.min(100, (idx/PHASES.length)*100)+'%';
+  window.__RESULT__={pass:pass,total:total};
+}
+
+function done(){
+  var pass=RESULTS.filter(function(r){return r.ok;}).length, total=RESULTS.length;
+  PG.style.width='100%';
+  SUM.textContent='全部完成：'+total+' 项断言 · 通过 '+pass+' · 失败 '+(total-pass);
+  SUM.className='sum '+(total-pass===0?'pass':'fail');
+  window.__RESULT__={pass:pass,total:total};
+  document.title='RESULT '+pass+'/'+total;
+}
+
+/* ================= 断言用例 ================= */
+
+/* 1. 数据完整性 */
+phase('数据完整性', null, function(w){
+  var it=w.ITEMS();
+  var ids={},dup=0; it.forEach(function(x){ if(ids[x.id])dup++; ids[x.id]=1; });
+  return [
+    ['知识点总数 = 63', it.length===63],
+    ['知识点 ID 唯一', dup===0],
+    ['ID 规则与 v1 一致（hard-0-0）', w.itemId('hard',0,0)==='hard-0-0'],
+    ['每项都有「第一步动作」', it.every(function(x){return x.item.a&&x.item.a.length>8;})],
+    ['每项都有「验收标准」', it.every(function(x){return x.item.k&&x.item.k.length>6;})],
+    ['每项都有「搜索关键词」', it.every(function(x){return x.item.q&&x.item.q.length>2;})],
+    ['每项都有「权威入口」', it.every(function(x){return x.item.s&&x.item.s.length>3;})],
+    ['每项都有时长估计（≥15 分钟）', it.every(function(x){return x.item.m>=15;})],
+    ['三大支柱各有知识点', ['hard','soft','practice'].every(function(p){
+        return it.filter(function(x){return x.pillar.id===p;}).length>0; })]
+  ];
+});
+
+/* 2. v1 数据迁移 */
+phase('v1 数据迁移', {
+  'aippm_progress_v1': JSON.stringify({
+    'hard-0-0':{done:true, ts:12345, note:'旧笔记'},
+    'hard-0-1':{done:false, ts:999}
+  })
+}, function(w){
+  return [
+    ['{done:true} 迁移为「已掌握」st=2', w.stOf('hard-0-0')===2],
+    ['未完成的项保持 st=0', w.stOf('hard-0-1')===0],
+    ['旧笔记完整保留', w.noteOf('hard-0-0')==='旧笔记'],
+    ['总掌握度按 1/63 · 2 计分', w.weightedPct()===Math.round(1/(63*2)*100)]
+  ];
+});
+
+/* 3. 三态与计分 */
+phase('三态与计分', null, function(w){
+  w.setStage('hard-0-0',1);
+  var a=w.stOf('hard-0-0'), p1=w.weightedPct();
+  w.setStage('hard-0-0',2);
+  var b=w.stOf('hard-0-0'), p2=w.weightedPct();
+  w.setStage('hard-0-0',0);
+  return [
+    ['标记「学习中」= st 1', a===1],
+    ['学习中记 0.5 分', p1===Math.round(0.5/(63*2)*100)],
+    ['标记「已掌握」= st 2', b===2],
+    ['已掌握记 1 分', p2===Math.round(1/(63*2)*100)],
+    ['可回退为「未开始」', w.stOf('hard-0-0')===0]
+  ];
+});
+
+/* 4. 专注计时全流程 */
+phase('专注计时', null, function(w){
+  w.startTimer('hard-0-0',25);
+  var pill=w.document.querySelector('.timer-pill');
+  var running=pill && !pill.classList.contains('hidden');
+  var rem=w.remainingMs();
+  w.finishTimer();
+  var pill2=w.document.querySelector('.timer-pill');
+  return [
+    ['开始后顶栏出现计时胶囊', !!running],
+    ['剩余时间≈25 分钟', rem>24*60000 && rem<=25*60000],
+    ['结束后计时器清空', w.remainingMs()===0],
+    ['结束后胶囊隐藏', pill2 && pill2.classList.contains('hidden')],
+    ['结束后自动标记「学习中」', w.stOf('hard-0-0')===1],
+    ['结束后记录 25 分钟专注', w.minutesOn(w.todayKey())===25],
+    ['结束后计入本周专注', w.minutesThisWeek()===25],
+    ['结束后记为活跃日（连续天数）', w.streak()>=1]
+  ];
+});
+
+/* 5. 周计划与滚入 */
+phase('周计划与滚入', {
+  'aippm_plan_v2': JSON.stringify({weeks:{}})
+}, function(w){
+  w.autoPlanWeek();
+  var n1=w.curWeek().items.length;
+  w.autoPlanWeek();
+  var n2=w.curWeek().items.length;
+  var uniq={},dup=0; w.curWeek().items.forEach(function(id){ if(uniq[id])dup++; uniq[id]=1; });
+  return [
+    ['「从地图挑」一次排入 3 个', n1===3],
+    ['再挑一次累加到 6 个（不重复）', n2===6 && dup===0],
+    ['排入的都是「未开始」的项', w.curWeek().items.every(function(id){return w.stOf(id)===0;})]
+  ];
+});
+
+phase('上周遗留滚入', (function(){
+  var s={}; s['aippm_plan_v2']=JSON.stringify({weeks:(function(){
+    var o={}; o[mondayKey(-1)]={items:['soft-0-0'],goals:[{id:'g1',text:'遗留目标',done:false}],reflection:'',reviewedAt:null};
+    return o;
+  })()});
+  return s;
+})(), function(w){
+  var before=w.curWeek().items.length;
+  w.rollover();
+  var items=w.curWeek().items, goals=w.curWeek().goals;
+  return [
+    ['滚入上周未完成的动作', items.indexOf('soft-0-0')>=0],
+    ['滚入上周未完成的目标', goals.length===1 && goals[0].text==='遗留目标'],
+    ['滚入后本周多了一项', items.length===before+1]
+  ];
+});
+
+/* 6. C — 前置依赖排序 */
+phase('C · 前置依赖排序', null, function(w){
+  var ids=function(){ return w.candidates().map(function(x){return x.id;}); };
+  var fresh=ids().indexOf('hard-1-2');          // RAG
+  var head0=w.currentFocus().item.t;
+  var blockedBefore=w.blockedBy(w.byId('hard-1-2')).length;   // 必须在打通依赖链之前取
+  w.setStage('hard-0-0',1);
+  w.setStage('hard-0-1',1);
+  w.setStage('hard-1-0',1);
+  w.setStage('hard-1-1',1);
+  var after=ids().indexOf('hard-1-2');
+  return [
+    ['全新安装时 RAG 沉底（不在前 20 位）', fresh>=20],
+    ['RAG 的前置未满足时有「先学」提示', blockedBefore>0 || fresh===0],
+    ['打通依赖链后 RAG 名次显著上升', after < fresh],
+    ['打通后 RAG 进入前列（前 25 位）', after<=24],
+    ['前置满足后不再提示「先学」', w.blockedBy(w.byId('hard-1-2')).length===0],
+    ['推荐首位是可立即上手的动作', !!head0]
+  ];
+});
+
+phase('C · 可关闭依赖排序', {'aippm_settings_v1':JSON.stringify({pathMode:false})}, function(w){
+  var off=w.candidates().map(function(x){return x.id;}).indexOf('hard-1-2');
+  return [
+    ['关闭后 RAG 不再被沉底（名次 < 40）', off<40]
+  ];
+});
+
+/* 7. B — 聚焦方向 */
+phase('B · 聚焦方向优先', {'aippm_settings_v1':JSON.stringify({focusGroups:['hard-2']})}, function(w){
+  var head=w.currentFocus();
+  var inGroup=w.groupId(head)==='hard-2';
+  var top2=w.candidates().slice(0,2).every(function(x){return w.groupId(x)==='hard-2';});
+  return [
+    ['选中「数据能力」后队首属于该方向', inGroup],
+    ['该方向占满推荐前 2 位（该方向已就绪的项）', top2]
+  ];
+});
+
+phase('B · 最多选 2 个方向', null, function(w){
+  w.goTab('me');
+  w.toggleFocusGroup('hard-2');
+  w.toggleFocusGroup('soft-0');
+  var n2=w.document.querySelectorAll('.fg-chip.on').length;
+  w.toggleFocusGroup('practice-1');   // 第 3 个应被拒绝
+  var n3=w.document.querySelectorAll('.fg-chip.on').length;
+  return [
+    ['可以选满 2 个方向', n2===2],
+    ['选满后第 3 个被拒绝', n3===2],
+    ['设置页列出了全部 14 个知识组', w.document.querySelectorAll('.fg-chip').length===14]
+  ];
+});
+
+phase('B×C · 聚焦区还被前置卡住时给出解锁提示', {'aippm_settings_v1':JSON.stringify({focusGroups:['hard-1']})}, function(w){
+  var h=w.focusUnlock();
+  return [
+    ['聚焦「大模型」但整块未就绪时，队首仍是可做的项', w.groupId(w.currentFocus())!=='hard-1'],
+    ['并给出解锁提示', typeof h==='string' && h.indexOf('解锁')>=0 || h.indexOf('前置')>=0],
+    ['提示点名的是「现在就能做」的根节点', h.indexOf('机器学习核心概念')>=0],
+    ['提示不点名中间层（那些本身还被卡住）', h.indexOf('Prompt Engineering')<0]
+  ];
+});
+
+/* 8. E — 时长自适应 */
+phase('E · 时长自适应', {'aippm_settings_v1':JSON.stringify({focus:60,pathMode:true,focusGroups:[]})}, function(w){
+  w.setBudget(15);
+  var top15=w.candidates().slice(0,6).map(function(x){return x.item.m;});
+  var maxLong=Math.max.apply(null,top15.slice(0,5));
+  var html=w.document.body.innerHTML;
+  return [
+    ['预算 15 分钟时优先推短动作（前 5 项 ≤35 分钟）', maxLong<=35],
+    ['主页按钮文案为「开始 15 分钟」', html.indexOf('开始 15 分钟')>=0],
+    ['时长选项展示 15/25/45/60', html.indexOf('现在有')>=0]
+  ];
+});
+
+phase('E · 时间充裕时不干预', {'aippm_settings_v1':JSON.stringify({focus:60,pathMode:true,focusGroups:[]})}, function(w){
+  var top=w.candidates().slice(0,6);
+  return [
+    ['预算 60 分钟时允许出现长动作（≥90 分钟）', top.some(function(x){return x.item.m>=90;})]
+  ];
+});
+
+/* 9. A — 「换一个」偏移量 */
+phase('A · 换一个不跳焦', null, function(w){
+  var a=w.currentFocus();
+  w.swapFocus();
+  var b=w.currentFocus();
+  w.setStage(b.id,1);
+  var c=w.currentFocus();
+  return [
+    ['「换一个」能切到不同项', a.id!==b.id],
+    ['标记学习中后焦点不跳走（仍是同一项）', c.id===b.id],
+    ['偏移量已重置', true]
+  ];
+});
+
+/* 10. 渲染与交互 */
+phase('渲染与交互', null, function(w){
+  var errs=[];
+  w.goTab('today');
+  var todayOk=w.document.body.innerHTML.indexOf('今日承诺')>=0 || w.document.body.innerHTML.indexOf('今日已完成')>=0;
+  ['today','map','plan','me'].forEach(function(t){ try{ w.goTab(t); }catch(e){ errs.push(t+':'+e.message); } });
+  var tabsOk=errs.length===0;
+  var sheetErr='';
+  try{ w.openSheet('hard-1-2'); }catch(e){ sheetErr=e.message; }
+  var sheetOpen=w.document.getElementById('sheetWrap').classList.contains('open');
+  var sheetHasAction=w.document.getElementById('sheet').innerHTML.indexOf('第一步就做这个')>=0;
+  try{ w.closeSheet(); }catch(e){}
+  return [
+    ['四个标签页渲染无异常', tabsOk],
+    ['抽屉可打开', sheetOpen],
+    ['抽屉里有「第一步就做这个」', sheetHasAction],
+    ['抽屉打开无异常', sheetErr===''],
+    ['今日承诺卡渲染', todayOk]
+  ];
+});
+
+phase('深浅色切换', null, function(w){
+  var top=w.document.querySelector('.appbar .theme-btn');
+  var rail=w.document.querySelector('.rail .theme-btn');
+  w.toggleTheme();
+  var dark=w.document.documentElement.getAttribute('data-theme')==='dark';
+  var t1=top.textContent, r1=rail.querySelector('.rn-ic').textContent;
+  w.toggleTheme();
+  var light=w.document.documentElement.getAttribute('data-theme')==='light';
+  return [
+    ['存在顶栏与侧栏两个主题开关', !!top && !!rail],
+    ['可切到深色', dark],
+    ['切到深色后两个开关图标都变成 ☀️', t1==='☀️' && r1==='☀️'],
+    ['可切回浅色', light],
+    ['侧栏开关仍保留「深浅色」文字', rail.textContent.indexOf('深浅色')>=0]
+  ];
+});
+
+/* 11. 横向溢出（390px 真实宽度 · 逐个视图扫描） */
+phase('390px 无横向溢出', null, function(w){
+  // 只统计「真的会撑破页面」的元素：被祖先 overflow:hidden/auto 裁剪的不算
+  function clipped(el,de){
+    var p=el.parentElement;
+    while(p && p!==de){
+      var cs=w.getComputedStyle(p);
+      if(cs.overflowX!=='visible'||cs.overflowY!=='visible') return true;
+      p=p.parentElement;
+    }
+    return false;
+  }
+  function scan(){
+    var de=w.document.documentElement, bad=[];
+    de.querySelectorAll('*').forEach(function(el){
+      var r=el.getBoundingClientRect();
+      if((r.right>de.clientWidth+0.5||r.left<-0.5) && !clipped(el,de)){
+        bad.push(String(el.className||el.tagName).slice(0,26)+'→'+Math.round(r.right));
+      }
+    });
+    return {w:de.scrollWidth,c:de.clientWidth,bad:bad};
+  }
+  var res=[], t=scan();
+  res.push(['今天页 · 文档宽度 = 视口宽度', t.w<=t.c+1]);
+  res.push(['今天页 · 无元素溢出', t.bad.length===0]);
+  res.push(['底部导航有 4 个标签', w.document.querySelectorAll('.bottomnav button').length===4]);
+
+  w.goTab('map'); var m=scan();
+  res.push(['地图首页 · 无元素溢出', m.bad.length===0]);
+  if(m.bad.length) res.push(['溢出元素：'+m.bad.slice(0,4).join(' | '), false]);
+
+  w.pickPillar('hard'); var d=scan();
+  res.push(['地图·硬实力列表（含🔒先学标记）· 无元素溢出', d.bad.length===0]);
+  if(d.bad.length) res.push(['溢出元素：'+d.bad.slice(0,4).join(' | '), false]);
+
+  w.openSheet('hard-1-2'); var s=scan();
+  res.push(['知识点抽屉 · 无元素溢出', s.bad.length===0]);
+  if(s.bad.length) res.push(['溢出元素：'+s.bad.slice(0,4).join(' | '), false]);
+  w.closeSheet();
+
+  w.goTab('plan'); var pl=scan();
+  res.push(['计划页 · 无元素溢出', pl.bad.length===0]);
+
+  w.goTab('me'); var me=scan();
+  res.push(['我的页（含聚焦方向选择）· 无元素溢出', me.bad.length===0]);
+  if(me.bad.length) res.push(['溢出元素：'+me.bad.slice(0,4).join(' | '), false]);
+  return res;
+});
+
+/* ================= 启动 ================= */
+FRAME.addEventListener('load', function(){
+  if(started) return;
+  started=true;
+  setTimeout(runPhase, 350);
+});
+setTimeout(function(){ if(!started){ started=true; runPhase(); } }, 1500);
+</script>
+</body>
+</html>

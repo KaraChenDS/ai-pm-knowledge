@@ -194,6 +194,17 @@
   .f-actions{display:flex;gap:9px;flex-wrap:wrap}
   .f-actions .btn{flex:1 1 0;min-width:0}
   .f-actions .btn-wide{flex:1 0 100%}
+  /* E: 「现在有几分钟」时长选择 */
+  .budget{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .budget .bg-lb{font-size:12.5px;color:var(--muted);font-weight:650}
+  .budget button{border:1px solid var(--border);background:var(--surface-2);color:var(--muted);
+    border-radius:10px;padding:7px 13px;font-size:13px;font-weight:700;min-height:38px;transition:.16s}
+  .budget button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .hint-line{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--muted);
+    line-height:1.55;margin-bottom:12px;background:var(--surface-2);border-radius:12px;padding:10px 12px}
+  .hint-line b{color:var(--text)}
+  .hint-line.warn{background:rgba(245,158,11,.13);color:#b45309}
+  [data-theme="dark"] .hint-line.warn{color:#fbbf24}
 
   /* ============ 进度条 / 统计 ============ */
   .bar{height:9px;border-radius:6px;background:var(--ring-track);overflow:hidden}
@@ -280,6 +291,10 @@
   .pill{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--chip);color:var(--muted)}
   .pill.st1{background:rgba(245,158,11,.16);color:#b45309}
   .pill.st2{background:rgba(16,185,129,.16);color:#047857}
+  .pill.warn{background:rgba(245,158,11,.16);color:#b45309;
+    flex:1 0 100%;min-width:0;white-space:normal;text-align:left;
+    line-height:1.5;padding:5px 9px;border-radius:9px}
+  [data-theme="dark"] .pill.warn{color:#fbbf24}
   [data-theme="dark"] .pill.st1{color:#fbbf24}
   [data-theme="dark"] .pill.st2{color:#34d399}
 
@@ -747,6 +762,59 @@ const PILLARS = [
   }
 ];
 
+/* =====================================================================
+   前置依赖图：id -> [必须先「开始过」的 id]
+   只影响「推荐顺序」，不锁死任何入口 —— 地图里随时能直接开任何一项。
+   判定标准是前置项达到「学习中」而非「已掌握」，避免卡死。
+   ===================================================================== */
+const PREREQ = {
+  /* 硬实力 · AI/ML 基础 */
+  "hard-0-1":["hard-0-0"],              // 深度学习    <- 机器学习核心概念
+  "hard-0-2":["hard-0-1"],              // NLP         <- 深度学习
+  "hard-0-3":["hard-0-1"],              // CV/多模态   <- 深度学习
+  /* 硬实力 · 大模型与生成式 AI */
+  "hard-1-0":["hard-0-1"],              // LLM 原理    <- 深度学习
+  "hard-1-1":["hard-1-0"],              // Prompt      <- LLM 原理
+  "hard-1-2":["hard-1-1"],              // RAG         <- Prompt
+  "hard-1-3":["hard-1-1"],              // Agent       <- Prompt
+  "hard-1-4":["hard-1-0"],              // 微调        <- LLM 原理
+  "hard-1-5":["hard-1-1"],              // 多模态生成  <- Prompt
+  "hard-1-6":["hard-1-0"],              // 评测体系    <- LLM 原理
+  /* 硬实力 · 数据能力 */
+  "hard-2-2":["hard-2-0"],              // 实验与因果  <- 数据分析
+  /* 硬实力 · 技术与工程 */
+  "hard-3-2":["hard-3-0","hard-1-0"],   // 部署/MLOps  <- API + LLM 原理
+  /* 硬实力 · 产品基本功 */
+  "hard-4-2":["hard-4-0"],              // 原型        <- PRD
+  "hard-4-3":["hard-4-0","hard-1-0"],   // AI 交互范式 <- PRD + LLM 原理
+  /* 硬实力 · 商业化 */
+  "hard-5-0":["hard-1-0"],              // 成本核算    <- LLM 原理
+  "hard-5-1":["hard-5-0"],              // 定价        <- 成本核算
+  "hard-5-2":["hard-5-0"],              // ROI         <- 成本核算
+
+  /* 软实力 · 获客与增长 */
+  "soft-0-3":["soft-0-0"],              // 渠道投放    <- 增长黑客
+  "soft-0-4":["soft-0-1"],              // 社区私域    <- 用户运营
+  /* 软实力 · 沟通与表达 */
+  "soft-1-1":["soft-1-0"],              // 演讲        <- 结构化表达
+  "soft-1-3":["soft-1-2"],              // 谈判        <- 跨部门协作
+  "soft-1-4":["soft-1-0"],              // 商务写作    <- 结构化表达
+  /* 软实力 · 用户洞察 */
+  "soft-2-1":["soft-2-0"],              // 需求洞察    <- 用户访谈
+  /* 软实力 · 领导力 */
+  "soft-3-1":["soft-3-0"],              // 团队领导    <- 项目管理
+  /* 软实力 · 个人品牌 */
+  "soft-4-1":["soft-4-0"],              // 个人 IP     <- 行业认知
+
+  /* 社会化实践 */
+  "practice-0-1":["hard-1-0"],          // 云厂商认证  <- LLM 原理
+  "practice-0-2":["soft-3-0"],          // PMP 认证    <- 项目管理
+  "practice-1-4":["hard-1-0"],          // 学术会议    <- LLM 原理
+  "practice-2-1":["soft-1-4"],          // 技术写作    <- 商务写作
+  "practice-2-3":["hard-1-1"],          // 黑客松      <- Prompt
+  "practice-2-5":["hard-1-2"]           // 实战项目    <- RAG（毕业设计）
+};
+
 /* ============ 状态键 ============ */
 const STORE_KEY="aippm_progress_v1";     // 键名保留，旧数据可无缝迁移
 const PLAN_KEY ="aippm_plan_v2";
@@ -761,7 +829,7 @@ let plan     = { weeks:{} }; // weeks[周一日期] -> {items:[id], goals:[], re
 let days     = {};          // "YYYY-MM-DD" -> true（有实质推进的日子）
 let sessions = [];          // [{id, min, ts}]
 let timer    = null;        // {id, endTs, min}
-let settings = { daily:1, weekly:3, focus:25 };
+let settings = { daily:1, weekly:3, focus:25, focusGroups:[], pathMode:true };
 let activeTab = "today";
 let mapPillar = "all", mapFilter = "all", mapQuery = "";
 let swapIdx   = 0;
@@ -828,6 +896,73 @@ function byId(id){ const a=ITEMS(); for(let i=0;i<a.length;i++) if(a[i].id===id)
 function stOf(id){ const p=progress[id]; return (p&&p.st!=null)?p.st:0; }
 function isMastered(id){ return stOf(id)===2; }
 function noteOf(id){ return (progress[id]&&progress[id].note)||""; }
+function groupId(x){ return x.pillar.id+"-"+x.gi; }
+function groupNameOf(gid){
+  const a=gid.split("-"), p=PILLARS.filter(z=>z.id===a[0])[0];
+  if(!p) return gid;
+  const g=p.groups[parseInt(a[1],10)];
+  return g ? p.name+" · "+g.name : gid;
+}
+function groupShort(gid){
+  const a=String(gid).split("-"), p=PILLARS.filter(z=>z.id===a[0])[0];
+  if(!p) return gid;
+  const g=p.groups[parseInt(a[1],10)];
+  return g?g.name:gid;
+}
+/* 前置项是否都已「开始过」（≥ 学习中） */
+function prereqMet(x){
+  const pre=PREREQ[x.id];
+  if(!pre||!pre.length) return true;
+  for(let i=0;i<pre.length;i++){ if(stOf(pre[i])<1) return false; }
+  return true;
+}
+/* 返回尚未满足的前置项对象列表，用于提示「建议先学」 */
+function blockedBy(x){
+  const pre=PREREQ[x.id]||[];
+  return pre.filter(id=>stOf(id)<1).map(byId).filter(Boolean);
+}
+function prereqNames(x){
+  return blockedBy(x).map(p=>p.item.t).join("、");
+}
+/* 沿依赖链向下找「现在就能做」的根节点。
+   例如从「RAG」出发会走回「机器学习核心概念」，而不是停在中间那层。 */
+function prereqFrontier(ids){
+  const seen={}, out=[];
+  function walk(id){
+    if(seen[id]) return;
+    seen[id]=1;
+    const x=byId(id);
+    if(!x || stOf(id)>=1) return;              // 不存在或已开始 → 不用管
+    const miss=blockedBy(x);
+    if(!miss.length){                          // 没有未满足的前置 → 现在就能做
+      if(out.indexOf(x)<0) out.push(x);
+      return;
+    }
+    miss.forEach(p=>walk(p.id));
+  }
+  (ids||[]).forEach(walk);
+  return out;
+}
+/* B×C 的交汇处：聚焦方向整个还在等前置时，告诉你怎么解锁它 */
+function focusUnlock(){
+  const fg=(settings.focusGroups||[])[0];
+  if(!fg) return "";
+  const mine=ITEMS().filter(x=>groupId(x)===fg && stOf(x.id)===0);
+  if(!mine.length || mine.some(x=>prereqMet(x))) return "";
+  const roots=prereqFrontier(mine.map(x=>x.id));
+  if(!roots.length) return "";
+  return `<div class="hint-line warn" style="margin-top:12px"><span>🎯</span><span>
+    聚焦方向「<b>${esc(groupShort(fg))}</b>」整块都还在等前置，所以现在推给你的还是别的方向。<br/>
+    但只要先做掉 <b>${esc(roots.map(p=>p.item.t).join("、"))}</b>，这条路就会打开。
+    <div style="margin-top:9px"><button class="btn btn-line btn-sm" onclick="planUnlock('${fg}')">把它加入本周</button></div>
+  </span></div>`;
+}
+function planUnlock(fg){
+  const mine=ITEMS().filter(x=>groupId(x)===fg && stOf(x.id)===0);
+  const roots=prereqFrontier(mine.map(x=>x.id));
+  if(!roots.length) return;
+  addToWeek(roots[0].id);
+}
 
 /* ============ 日期 / 周 ============ */
 function todayKey(){ return dstr(new Date()); }
@@ -884,25 +1019,51 @@ function weekActiveDays(){
   return Object.keys(days).filter(k=>{ const t=new Date(k+"T00:00:00").getTime(); return t>=ws&&t<we; }).length;
 }
 
-/* ============ 推荐：现在做什么 ============ */
+/* ============ 推荐：现在做什么 ============
+   顺序 = 「学习中」优先，其余按四层权重稳定排序：
+     前置依赖已满足(8) > 你指定的聚焦方向(4) > 本周已排(2) > 时长装得下(1)
+   权重 8 > 4+2+1，所以「依赖没满足」的项一定排在所有「依赖已满足」之后。
+   同权重时保持「三大支柱轮转」的基准顺序，避免连着全是硬实力。  */
 function candidates(){
   const all=ITEMS();
+  const budget=settings.focus;
+  const focusG=settings.focusGroups||[];
+  const wk=curWeek();
+  const pathOn=(settings.pathMode!==false);
+
+  // 1) 学习中：最近动过的排前面（接着做手头这件）
   const doing=all.filter(x=>stOf(x.id)===1)
                  .sort((a,b)=>((progress[b.id]||{}).ts||0)-((progress[a.id]||{}).ts||0));
-  const w=curWeek();
-  const planned=w.items.map(byId).filter(Boolean).filter(x=>stOf(x.id)===0);
-  const rest=all.filter(x=>stOf(x.id)===0 && w.items.indexOf(x.id)<0);
-  const out=doing.concat(planned);
-  const seen={}; out.forEach(x=>seen[x.id]=1);
-  // 按支柱轮转，避免连着全是硬实力
+
+  // 2) 基准顺序：按支柱轮转
+  const rest=all.filter(x=>stOf(x.id)===0);
   const buckets={};
-  rest.forEach(x=>{ if(!buckets[x.pillar.id]) buckets[x.pillar.id]=[]; buckets[x.pillar.id].push(x); });
+  rest.forEach(x=>{ const k=x.pillar.id; if(!buckets[k]) buckets[k]=[]; buckets[k].push(x); });
   const order=PILLARS.map(p=>p.id);
+  const rr=[];
   let guard=0;
   while(order.some(pid=>buckets[pid]&&buckets[pid].length)&&guard++<600){
-    order.forEach(pid=>{ if(buckets[pid]&&buckets[pid].length){ const it=buckets[pid].shift(); if(!seen[it.id]) out.push(it); } });
+    order.forEach(pid=>{ if(buckets[pid]&&buckets[pid].length) rr.push(buckets[pid].shift()); });
   }
-  return out;
+
+  // 3) 稳定排序（同分保持轮转基准序）
+  // 时长匹配：预算小就优先推短动作；预算 ≥60 视为「时间充裕」，不再干预顺序
+  const fit=x=>{
+    if(budget>=60) return 0;
+    const m=x.item.m;
+    if(m<=budget) return 2;        // 装得下
+    if(m<=budget+15) return 1;     // 略超，开个头也行
+    return 0;
+  };
+  const ranked=rr.map((x,i)=>({x:x,i:i,key:
+      ((!pathOn||prereqMet(x))?8:0)
+    + ((focusG.indexOf(groupId(x))>=0)?4:0)
+    + ((wk.items.indexOf(x.id)>=0)?2:0)
+    + fit(x)
+  }));
+  ranked.sort((a,b)=> (b.key-a.key) || (a.i-b.i));
+
+  return doing.concat(ranked.map(r=>r.x));
 }
 function currentFocus(){ const c=candidates(); return c.length?c[swapIdx%c.length]:null; }
 function swapFocus(){ swapIdx++; render(); }
@@ -912,6 +1073,7 @@ function setStage(id,st){
   const prev=progress[id]||{};
   progress[id]={st:st,ts:Date.now(),note:prev.note||""};
   if(st>=1) markedDay();
+  swapIdx=0;                 // A: 状态一变就回到队首，否则「换一个」的偏移会让焦点跳走
   saveProgress();
   render();
   if(sheetId===id && $("#sheetWrap").classList.contains("open")) openSheet(id,true);
@@ -941,6 +1103,7 @@ function stopTimer(silent){
       if((p.st||0)<1) progress[timer.id]={st:1,ts:Date.now(),note:p.note||""};
       saveProgress(); toast("本次专注 "+used+" 分钟，已记录 ✓");
     }
+    swapIdx=0;
   }
   timer=null; saveTimer(); tickTimer(); render();
   if(sheetId) openSheet(sheetId,true);
@@ -956,6 +1119,7 @@ function finishTimer(){
     const it=byId(id);
     notify("专注完成 🎉",(it?it.item.t:"")+" · 已完成 "+min+" 分钟，去写下你的收获吧");
     toast("专注完成 🎉 已标记为学习中");
+    swapIdx=0;
     openSheet(id);
   }
   tickTimer(); render();
@@ -1059,10 +1223,26 @@ function renderToday(){
         <div class="f-crumb">
           <span class="tag" style="background:${focus.pillar.color}22;color:${focus.pillar.color}">${focus.pillar.icon} ${esc(focus.pillar.name)}</span>
           <span>${esc(focus.group.name)}</span>
+          ${(settings.focusGroups||[]).indexOf(groupId(focus))>=0?'<span class="pill">🎯 聚焦中</span>':''}
           ${stOf(focus.id)===1?'<span class="pill st1">学习中</span>':''}
         </div>
         <div class="f-title">${esc(focus.item.t)}</div>
         <div class="f-desc">${esc(focus.item.d)}</div>
+
+        <div class="budget">
+          <span class="bg-lb">现在有</span>
+          ${[15,25,45,60].map(n=>`<button class="${settings.focus===n?'on':''}" onclick="setBudget(${n})">${n}${n===60?'+':''}</button>`).join("")}
+          <span class="bg-lb">分钟</span>
+        </div>
+
+        ${blockedBy(focus).length
+          ? `<div class="hint-line warn"><span>🔒</span><span>建议先学：<b>${esc(prereqNames(focus))}</b>。
+              按学习路径，这项排在它们后面 —— 但你想现在做也完全可以，随你。</span></div>`
+          : (focus.item.m>settings.focus
+              ? `<div class="hint-line"><span>⏱</span><span>这项完整做约需 <b>${focus.item.m} 分钟</b>。
+                  今天先做 ${settings.focus} 分钟也算推进，剩下的明天接着来。</span></div>`
+              : "")}
+
         <div class="action-box" style="margin-bottom:13px">
           <div class="ab-label">▶ 第一步就做这个</div>
           <div class="ab-text">${esc(focus.item.a)}</div>
@@ -1127,7 +1307,11 @@ function renderToday(){
     </div>
 
     <div id="focusAnchor"></div>
-    <div class="sect-h">🎯 现在做这个<span class="sh-sub">不是「该学什么」，是「现在做什么」</span></div>
+    <div class="sect-h">🎯 现在做这个<span class="sh-sub">${
+      (settings.focusGroups||[]).length
+        ? "聚焦："+esc(settings.focusGroups.map(groupShort).join("、"))
+        : "不是「该学什么」，是「现在做什么」"}</span></div>
+    ${focusUnlock()}
     ${focusHtml}
 
     ${firstRun
@@ -1212,7 +1396,8 @@ function renderMap(){
             <div class="c-title">${esc(it.t)}</div>
             <div class="c-act">▶ ${esc(it.a)}</div>
             <div class="c-foot">${pill}<span class="pill">⏱ ${it.m}分</span>
-              ${noteOf(id)?'<span class="pill">📝 笔记</span>':''}</div>
+              ${noteOf(id)?'<span class="pill">📝 笔记</span>':''}
+              ${(s===0&&blockedBy({id:id}).length)?`<span class="pill warn">🔒 先学 ${esc(prereqNames({id:id}))}</span>`:''}</div>
           </div>
         </div>`;
       }).join("");
@@ -1391,6 +1576,48 @@ function renderMe(){
       <div class="note" style="margin-top:8px">建议保持 1 个动作 / 25 分钟。门槛低到你没有理由拒绝，才是能坚持的设计。</div>
     </div>
 
+    <div class="sect-h">🎯 聚焦方向<span class="sh-sub">推荐会优先推这些方向</span></div>
+    <div class="panel">
+      <div class="note" style="margin-bottom:12px">
+        选 1–2 个你这两周真正想突破的方向，推荐会把它们排到前面。<br/>
+        不选也没关系，那就按全体系顺序推。
+      </div>
+      ${PILLARS.map(p=>`
+        <div style="margin-bottom:13px">
+          <div style="font-size:12.5px;font-weight:700;color:${p.color};margin-bottom:7px">${p.icon} ${p.name}</div>
+          <div class="radios">
+            ${p.groups.map((g,gi)=>{
+              const gid=p.id+"-"+gi;
+              const on=(settings.focusGroups||[]).indexOf(gid)>=0;
+              const its=ITEMS().filter(x=>groupId(x)===gid);
+              const m=its.filter(x=>stOf(x.id)===2).length;
+              return `<button class="fg-chip ${on?'on':''}" onclick="toggleFocusGroup('${gid}')">
+                ${esc(g.name)} <span style="opacity:.65;font-weight:600">${m}/${its.length}</span></button>`;
+            }).join("")}
+          </div>
+        </div>`).join("")}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-line btn-sm" onclick="clearFocusGroups()">清除聚焦方向</button>
+        <span class="note" style="margin:0">已选 ${(settings.focusGroups||[]).length} / 2</span>
+      </div>
+    </div>
+
+    <div class="sect-h">🧭 推荐顺序</div>
+    <div class="panel">
+      <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap">
+        <div class="r-tx" style="cursor:default">
+          <span class="r-t">按前置依赖排序</span>
+          <div class="r-sub">例如「RAG」要等「Prompt Engineering」开始过才会被优先推荐</div>
+        </div>
+        <button class="btn ${settings.pathMode!==false?'btn-primary':'btn-line'} btn-sm" onclick="togglePathMode()">
+          ${settings.pathMode!==false?'已开启':'已关闭'}</button>
+      </div>
+      <div class="note" style="margin-top:10px">
+        关掉之后推荐就纯粹按三大支柱轮转，不再考虑先后关系。<br/>
+        无论开关如何，<b>地图里始终可以直接开始任何一个知识点</b>——这只是推荐顺序，不是门禁。
+      </div>
+    </div>
+
     <div class="panel">
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-line btn-sm" onclick="toggleTheme()">🌗 深浅色</button>
@@ -1483,6 +1710,11 @@ function openSheet(id,keep){
       <span class="meta-pill">📚 ${esc(it.s)}</span>
     </div>
 
+    ${(s===0&&blockedBy({id:id}).length)
+      ? `<div class="hint-line warn" style="margin-bottom:14px"><span>🔒</span>
+          <span>按学习路径，建议先学：<b>${esc(prereqNames({id:id}))}</b>。<br/>
+          这只是推荐顺序，你想直接开始这项也完全可以。</span></div>` : ""}
+
     <div class="link-row">
       <button class="btn btn-soft btn-sm" onclick="window.open('https://www.bing.com/search?q=${q}','_blank')">🔍 搜索关键词</button>
       <button class="btn btn-line btn-sm" onclick="window.open('https://www.bing.com/search?q=${sq}','_blank')">📚 打开入口</button>
@@ -1532,6 +1764,22 @@ function onNote(id,v){
   p.note=v; progress[id]=p; saveProgress();
 }
 function setSetting(k,v){ settings[k]=v; saveSettings(); render(); toast("已保存设置"); }
+/* E: 「现在有几分钟」——同时决定计时长度，并让推荐优先推装得下的项 */
+function setBudget(n){ settings.focus=n; saveSettings(); swapIdx=0; render(); }
+/* B: 聚焦方向开关 */
+function toggleFocusGroup(gid){
+  if(!settings.focusGroups) settings.focusGroups=[];
+  const i=settings.focusGroups.indexOf(gid);
+  if(i>=0) settings.focusGroups.splice(i,1);
+  else{
+    if(settings.focusGroups.length>=2){ toast("最多选 2 个方向，聚焦才有意义"); return; }
+    settings.focusGroups.push(gid);
+  }
+  saveSettings(); swapIdx=0; render();
+}
+function clearFocusGroups(){ settings.focusGroups=[]; saveSettings(); swapIdx=0; render(); toast("已清除聚焦方向"); }
+function togglePathMode(){ settings.pathMode=(settings.pathMode===false); saveSettings(); swapIdx=0; render();
+  toast(settings.pathMode?"已开启：按前置依赖排序推荐":"已关闭：不再按依赖排序"); }
 function enableNotify(){
   if(!("Notification" in window)){ toast("这个浏览器不支持系统通知"); return; }
   Notification.requestPermission().then(p=>{
