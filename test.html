@@ -191,14 +191,14 @@ phase('周计划与滚入', {
   'aippm_plan_v2': JSON.stringify({weeks:{}})
 }, function(w){
   w.autoPlanWeek();
-  var n1=w.curWeek().items.length;
+  var n1=w.weekItems(w.curWeek()).length;
   w.autoPlanWeek();
-  var n2=w.curWeek().items.length;
-  var uniq={},dup=0; w.curWeek().items.forEach(function(id){ if(uniq[id])dup++; uniq[id]=1; });
+  var n2=w.weekItems(w.curWeek()).length;
+  var uniq={},dup=0; w.weekItems(w.curWeek()).forEach(function(id){ if(uniq[id])dup++; uniq[id]=1; });
   return [
     ['「从地图挑」一次排入 3 个', n1===3],
     ['再挑一次累加到 6 个（不重复）', n2===6 && dup===0],
-    ['排入的都是「未开始」的项', w.curWeek().items.every(function(id){return w.stOf(id)===0;})]
+    ['排入的都是「未开始」的项', w.weekItems(w.curWeek()).every(function(id){return w.stOf(id)===0;})]
   ];
 });
 
@@ -209,9 +209,9 @@ phase('上周遗留滚入', (function(){
   })()});
   return s;
 })(), function(w){
-  var before=w.curWeek().items.length;
+  var before=w.weekItems(w.curWeek()).length;
   w.rollover();
-  var items=w.curWeek().items, goals=w.curWeek().goals;
+  var items=w.weekItems(w.curWeek()), goals=w.weekGoals(w.curWeek());
   return [
     ['滚入上周未完成的动作', items.indexOf('soft-0-0')>=0],
     ['滚入上周未完成的目标', goals.length===1 && goals[0].text==='遗留目标'],
@@ -406,6 +406,110 @@ phase('推荐依据说明 · 已开始项', null, function(w){
   ];
 });
 
+/* 10.7 同步：合并语义（最易做错的部分） */
+phase('同步合并 · 状态与笔记各自独立', null, function(w){
+  var a={x:{st:2,sts:1000,note:'A 写的笔记',nts:1000,ts:1000}};
+  var b={x:{st:0,sts:2000,note:'',nts:0,ts:2000}};
+  var m=w.mergeProgress(a,b);
+  return [
+    ['状态取较新的一侧（取消生效）', m.x.st===0],
+    ['笔记按自己的时间戳保留，不被空值抹掉', m.x.note==='A 写的笔记'],
+    ['sts / nts 各自独立保留', m.x.sts===2000 && m.x.nts===1000]
+  ];
+});
+
+phase('同步合并 · 两台设备各改同一项的不同部分', null, function(w){
+  var a={x:{st:0,sts:5000,note:'',nts:0,ts:5000}};          // A 取消了掌握
+  var b={x:{st:2,sts:1000,note:'B 补充的笔记',nts:6000,ts:6000}}; // B 补了笔记
+  var m=w.mergeProgress(a,b);
+  return [
+    ['较新的状态获胜', m.x.st===0],
+    ['较新的笔记获胜', m.x.note==='B 补充的笔记'],
+    ['两边都没丢', m.x.st===0 && m.x.note==='B 补充的笔记']
+  ];
+});
+
+phase('同步合并 · 墓碑让「取消排入」跨设备生效', null, function(w){
+  var m=w.mergeByTime({itemA:100,itemB:200},{itemA:-300});
+  return [
+    ['较新的移除（负值）胜出', m.itemA===-300],
+    ['未被移除的键保留', m.itemB===200],
+    ['已经移除的不会复活', w.mergeByTime({itemA:-300},{itemA:100}).itemA===-300]
+  ];
+});
+
+phase('同步合并 · 目标并集与删除墓碑', null, function(w){
+  var a={weeks:{W:{items:{},goals:{g1:{text:'甲',done:false,cts:1,ts:1,del:false}}}}};
+  var b={weeks:{W:{items:{},goals:{
+      g1:{text:'甲',done:true,cts:1,ts:9,del:false},
+      g2:{text:'乙',done:false,cts:2,ts:2,del:false},
+      g3:{text:'丙',done:false,cts:3,ts:3,del:false}}}}};
+  var m=w.mergePlan(a,b);
+  var g=m.weeks.W.goals;
+  var m2=w.mergePlan(m,{weeks:{W:{items:{},goals:{g2:{text:'乙',done:false,cts:2,ts:20,del:true}}}}});
+  return [
+    ['目标取并集', Object.keys(g).length===3],
+    ['同一目标取较新版本', g.g1.done===true],
+    ['删除墓碑生效', m2.weeks.W.goals.g2.del===true],
+    ['删除只影响被删的那个', !!m2.weeks.W.goals.g1 && !!m2.weeks.W.goals.g3]
+  ];
+});
+
+phase('同步合并 · 会话按 uid 去重并集', null, function(w){
+  var a=[{uid:'u1',id:'x',min:25,ts:1}];
+  var b=[{uid:'u1',id:'x',min:25,ts:1},{uid:'u2',id:'x',min:45,ts:2}];
+  var m=w.mergeSessions(a,b);
+  return [
+    ['按 uid 去重', m.length===2],
+    ['不同会话都保留', m.filter(function(s){return s.uid==='u2';}).length===1]
+  ];
+});
+
+phase('同步 · 清空全部数据可以跨设备生效', {
+  'aippm_progress_v1': JSON.stringify({
+    old1:{st:2,sts:1000,note:'',nts:0,ts:1000},
+    old2:{st:2,sts:2000,note:'',nts:0,ts:2000}})
+}, function(w){
+  var before=w.stOf('old1')+w.stOf('old2');
+  w.mergeRemoteState({resetAt:Date.now(),progress:{},plan:{weeks:{}},days:{},sessions:[],settings:{}});
+  return [
+    ['清空前两条都在', before===4],
+    ['清空后比 resetAt 旧的记录被丢弃', w.stOf('old1')===0 && w.stOf('old2')===0]
+  ];
+});
+
+phase('同步兼容 · v1 云端载荷可被解析', null, function(w){
+  var v1={updatedAt:123,data:{'hard-0-0':{done:true,ts:500,note:'老笔记'}},plan:{weeks:{}}};
+  var n=w.normalizePayload(v1);
+  return [
+    ['v1 的 data 映射为 progress', !!n.progress['hard-0-0']],
+    ['done:true 解析为已掌握', n.progress['hard-0-0'].st===2],
+    ['老笔记与时间戳保留', n.progress['hard-0-0'].note==='老笔记' && n.progress['hard-0-0'].sts===500]
+  ];
+});
+
+phase('同步 · 键顺序不同不应误判为有变化', null, function(w){
+  var s1=w.stateSig({progress:{x:{st:1,note:'n',sts:1,nts:1,ts:1}},plan:{weeks:{}},days:{},sessions:[],settings:{}});
+  var s2=w.stateSig({progress:{x:{ts:1,nts:1,note:'n',sts:1,st:1}},plan:{weeks:{}},days:{},sessions:[],settings:{}});
+  var s3=w.stateSig({progress:{x:{st:1,note:'改了',sts:1,nts:1,ts:1}},plan:{weeks:{}},days:{},sessions:[],settings:{}});
+  return [
+    ['键顺序不同 → 判定为无变化', s1===s2],
+    ['内容不同 → 判定为有变化', s1!==s3]
+  ];
+});
+
+phase('安全 · 令牌绝不进入载荷与导出', null, function(w){
+  w.saveSyncSettings({owner:'o',repo:'r',path:'p',token:'SECRET_TOKEN_XYZ'});
+  var pay=JSON.stringify(w.payload());
+  var exportKeys=Object.keys({v:3,exportedAt:1,resetAt:1,progress:1,plan:1,days:1,sessions:1,settings:1});
+  return [
+    ['令牌确实保存在本机', w.syncSettings().token==='SECRET_TOKEN_XYZ'],
+    ['同步载荷不含令牌原文', pay.indexOf('SECRET_TOKEN_XYZ')<0],
+    ['同步载荷里没有同步配置对象', pay.indexOf('SECRET_TOKEN_XYZ')<0 && Object.keys(w.payload()).indexOf('sync')<0],
+    ['导出载荷的字段名里没有 token', exportKeys.every(function(k){ return !/token/i.test(k); })]
+  ];
+});
+
 /* 11. 横向溢出（390px 真实宽度 · 逐个视图扫描） */
 phase('390px 无横向溢出', null, function(w){
   // 只统计「真的会撑破页面」的元素：被祖先 overflow:hidden/auto 裁剪的不算
@@ -452,6 +556,17 @@ phase('390px 无横向溢出', null, function(w){
   w.goTab('me'); var me=scan();
   res.push(['我的页（含聚焦方向选择）· 无元素溢出', me.bad.length===0]);
   if(me.bad.length) res.push(['溢出元素：'+me.bad.slice(0,4).join(' | '), false]);
+
+  // 折叠面板默认不渲染子元素，必须展开后再扫一次，否则是测试盲区
+  w.saveSyncSettings({owner:'KaraChenDS',repo:'ai-pm-progress',path:'progress.json',token:'gho_test_token_1234567890'});
+  w.goTab('me');
+  Array.prototype.forEach.call(w.document.querySelectorAll('details.acc'), function(d){ d.open = true; });
+  const dg=w.document.getElementById('diagOut');
+  if(dg) dg.textContent='① 同步配置：KaraChenDS/ai-pm-progress → progress.json\n   ✓ 令牌已保存\n② 测试 api.github.com …\n   ✓ 有响应（HTTP 200）';
+  var sy=scan();
+  res.push(['展开的同步面板 · 无元素溢出', sy.bad.length===0]);
+  if(sy.bad.length) res.push(['溢出元素：'+sy.bad.slice(0,4).join(' | '), false]);
+  res.push(['同步面板确实已渲染出内容', w.document.body.innerHTML.indexOf('多端云同步')>=0]);
   return res;
 });
 

@@ -384,6 +384,27 @@
     border-radius:10px;padding:9px 15px;font-size:13px;font-weight:700;min-height:42px}
   .radios button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 
+  /* 同步状态胶囊 */
+  .sync-chip{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 12px;border-radius:12px;
+    border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:12.5px;font-weight:700;
+    transition:.18s;white-space:nowrap;flex:0 0 auto;cursor:pointer}
+  .sync-chip:active{transform:scale(.96)}
+  .sync-chip .sc-ic{font-size:14px}
+  .sync-chip.ok{color:#047857;border-color:rgba(16,185,129,.45)}
+  .sync-chip.err{color:#dc2626;border-color:rgba(220,38,38,.45);background:rgba(220,38,38,.07)}
+  .sync-chip.busy{color:var(--accent);border-color:rgba(99,102,241,.45)}
+  .sync-chip.off{opacity:.72}
+  [data-theme="dark"] .sync-chip.ok{color:#34d399}
+  [data-theme="dark"] .sync-chip.err{color:#f87171}
+  [data-theme="dark"] .sync-chip.busy{color:#a5b4fc}
+  @media(max-width:430px){.sync-chip{padding:0 10px}.sync-chip .sc-tx{display:none}}
+  .diag{font-size:11.5px;line-height:1.75;white-space:pre-wrap;word-break:break-word;background:var(--field);
+    border:1px solid var(--border);border-radius:12px;padding:11px;color:var(--muted);margin:0;
+    max-height:280px;overflow:auto;font-family:ui-monospace,Menlo,monospace}
+  .diag:empty{display:none}
+  .banner.err{background:linear-gradient(135deg,#dc2626,#f97316)}
+  .sync-note{font-size:11.5px;color:var(--muted);line-height:1.7;margin-top:9px}
+
   .toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + var(--safe-b) + 18px);z-index:99;
     transform:translateX(-50%) translateY(16px);background:var(--text);color:var(--bg);
     padding:12px 20px;border-radius:13px;font-size:13.5px;font-weight:650;opacity:0;pointer-events:none;
@@ -409,6 +430,8 @@
     </div>
     <nav class="rail-nav" id="railNav"></nav>
     <div class="rail-bottom">
+      <button class="rail-link sync-chip off" onclick="manualSync()">
+        <span class="rn-ic">☁️</span><span class="sc-tx">未连接</span></button>
       <button class="rail-link theme-btn" onclick="toggleTheme()">
         <span class="rn-ic">🌙</span><span>深浅色</span></button>
       <button class="timer-pill hidden" onclick="openTimerSheet()"></button>
@@ -444,9 +467,11 @@
       <div class="ab-title" id="abTitle">今天</div>
       <div class="ab-actions">
         <button class="timer-pill hidden" id="timerPillTop" onclick="openTimerSheet()"></button>
+        <button class="sync-chip off" onclick="manualSync()" title="点击立即同步"><span class="sc-ic">☁️</span><span class="sc-tx">未连接</span></button>
         <button class="icon-btn theme-btn" id="themeBtn" title="切换深浅色">🌙</button>
       </div>
     </header>
+    <div id="syncBanner" class="hidden" style="margin-top:12px"></div>
     <div id="view"></div>
     <footer class="foot">
       把 63 个知识点拆成「今天就能做完的一步」· 数据保存在本设备浏览器<br/>
@@ -829,13 +854,15 @@ const SESS_KEY ="aippm_sessions_v1";
 const TIMER_KEY="aippm_timer_v1";
 const THEME_KEY="aippm_theme";
 const SET_KEY  ="aippm_settings_v1";
+const RESET_KEY="aippm_reset_v1";
 
 let progress = {};          // id -> {st:0|1|2, ts, note}
 let plan     = { weeks:{} }; // weeks[周一日期] -> {items:[id], goals:[], reflection, reviewedAt}
 let days     = {};          // "YYYY-MM-DD" -> true（有实质推进的日子）
-let sessions = [];          // [{id, min, ts}]
+let sessions = [];          // [{uid, id, min, ts}]
 let timer    = null;        // {id, endTs, min}
 let settings = { daily:1, weekly:3, focus:25, focusGroups:[], pathMode:true };
+let resetAt = 0;            // 「清空全部数据」的时刻，比它旧的记录一律丢弃（让清空能跨设备生效）
 let activeTab = "today";
 let mapPillar = "all", mapFilter = "all", mapQuery = "";
 let swapIdx   = 0;
@@ -853,6 +880,7 @@ function loadAll(){
   Object.keys(progress).forEach(k=>{
     const p=progress[k]; if(!p||typeof p!=="object") return;
     if(p.st===undefined){ p.st=p.done?2:0; delete p.done; delete p._open; migrated=true; }
+    if(p.sts==null||p.nts==null){ progress[k]=normRec(p); migrated=true; }
   });
   try{ plan=JSON.parse(localStorage.getItem(PLAN_KEY)); if(!plan||!plan.weeks) plan={weeks:{}}; }
   catch(e){ plan={weeks:{}}; }
@@ -863,23 +891,38 @@ function loadAll(){
     if(!had && old && old.weeks){
       Object.keys(old.weeks).forEach(k=>{
         const w=old.weeks[k];
-        plan.weeks["old-"+k]={items:[],goals:(w.goals||[]),reflection:w.reflection||"",reviewedAt:w.reviewedAt||null};
+        plan.weeks["old-"+k]=normalizeWeek({items:[],goals:(w.goals||[]),
+          reflection:w.reflection||"",reviewedAt:w.reviewedAt||null});
       });
       localStorage.setItem(PLAN_KEY,JSON.stringify(plan));
     }
   }catch(e){}
+  /* 一次性把所有周数据规范化成可合并结构（数组 → 时刻表），
+     否则 rollover / 历史周这些直接读 plan.weeks[k] 的地方会拿到错形状。 */
+  Object.keys(plan.weeks||{}).forEach(k=>{ normalizeWeek(plan.weeks[k]); });
   try{ days=JSON.parse(localStorage.getItem(DAYS_KEY))||{}; }catch(e){ days={}; }
   try{ sessions=JSON.parse(localStorage.getItem(SESS_KEY))||[]; }catch(e){ sessions=[]; }
+  sessions.forEach((s,i)=>{ if(!s.uid) s.uid=(s.id||"x")+"|"+(s.ts||0)+"|"+i; });   // 旧数据补 uid
   try{ const s=JSON.parse(localStorage.getItem(SET_KEY)); if(s) settings=Object.assign(settings,s); }catch(e){}
+  try{ resetAt=parseInt(localStorage.getItem(RESET_KEY),10)||0; }catch(e){ resetAt=0; }
+  /* v2 的旧令牌键迁移到新的同步配置键 */
+  try{
+    const oldTok=localStorage.getItem("aippm_sync_token");
+    if(oldTok && !localStorage.getItem(SY_KEY)){
+      localStorage.setItem(SY_KEY, JSON.stringify({token:oldTok}));
+      localStorage.removeItem("aippm_sync_token");
+    }
+  }catch(e){}
   try{ timer=JSON.parse(localStorage.getItem(TIMER_KEY)); }catch(e){ timer=null; }
   if(migrated) saveProgress(true);
 }
 function saveProgress(silent){ localStorage.setItem(STORE_KEY,JSON.stringify(progress)); if(!silent) schedulePush(); }
 function savePlan(){ localStorage.setItem(PLAN_KEY,JSON.stringify(plan)); schedulePush(); }
-function saveDays(){ localStorage.setItem(DAYS_KEY,JSON.stringify(days)); }
-function saveSessions(){ localStorage.setItem(SESS_KEY,JSON.stringify(sessions.slice(-400))); }
+function saveDays(){ localStorage.setItem(DAYS_KEY,JSON.stringify(days)); schedulePush(); }
+function saveSessions(){ localStorage.setItem(SESS_KEY,JSON.stringify(sessions.slice(-400))); schedulePush(); }
 function saveTimer(){ timer?localStorage.setItem(TIMER_KEY,JSON.stringify(timer)):localStorage.removeItem(TIMER_KEY); }
-function saveSettings(){ localStorage.setItem(SET_KEY,JSON.stringify(settings)); }
+function saveSettings(){ settings.settingsAt=Date.now(); localStorage.setItem(SET_KEY,JSON.stringify(settings)); schedulePush(); }
+function saveReset(){ localStorage.setItem(RESET_KEY,String(resetAt||0)); }
 
 /* ============ 工具 ============ */
 const $=s=>document.querySelector(s);
@@ -902,6 +945,30 @@ function byId(id){ const a=ITEMS(); for(let i=0;i<a.length;i++) if(a[i].id===id)
 function stOf(id){ const p=progress[id]; return (p&&p.st!=null)?p.st:0; }
 function isMastered(id){ return stOf(id)===2; }
 function noteOf(id){ return (progress[id]&&progress[id].note)||""; }
+/* 单条进度记录的规范形态：
+     st/sts  —— 状态与其发生时刻
+     note/nts —— 笔记与其编辑时刻（独立时间戳，否则「手机改笔记、iPad 改状态」必丢一边）
+     ts      —— 两者取大，仅供「今日推进 / 最近打卡」这类展示使用 */
+function normRec(p){
+  p=p||{};
+  const ts=p.ts||0;
+  if(p.sts==null&&p.nts==null){
+    return { st:(p.st==null?0:p.st), sts:ts,
+             note:p.note||"", nts:(p.note?ts:0), ts:ts };
+  }
+  const sts=p.sts||0, nts=p.nts||0;
+  return { st:(p.st==null?0:p.st), sts:sts, note:p.note||"", nts:nts, ts:Math.max(sts,nts) };
+}
+function recOf(id){ return normRec(progress[id]); }
+/* 只更新真正变化的字段，并各自盖时间戳 */
+function writeRec(id,patch){
+  const r=recOf(id);
+  if(patch.st!=null && patch.st!==r.st){ r.st=patch.st; r.sts=Date.now(); }
+  if(patch.note!=null && patch.note!==r.note){ r.note=patch.note; r.nts=Date.now(); }
+  r.ts=Math.max(r.sts,r.nts);
+  progress[id]=r;
+  return r;
+}
 function groupId(x){ return x.pillar.id+"-"+x.gi; }
 function groupNameOf(gid){
   const a=gid.split("-"), p=PILLARS.filter(z=>z.id===a[0])[0];
@@ -978,14 +1045,51 @@ function weekKey(){ return dstr(mondayOf(new Date())); }
 function weekKeyOf(off){ const m=mondayOf(new Date()); m.setDate(m.getDate()+off*7); return dstr(m); }
 function weekLabel(k){ const s=new Date(k+"T00:00:00"), e=new Date(s.getTime()+6*864e5);
   return (s.getMonth()+1)+"/"+s.getDate()+" – "+(e.getMonth()+1)+"/"+e.getDate(); }
-function ensureWeek(k){
-  k=k||weekKey();
-  if(!plan.weeks[k]) plan.weeks[k]={items:[],goals:[],reflection:"",reviewedAt:null};
-  const w=plan.weeks[k];
-  if(!w.items) w.items=[]; if(!w.goals) w.goals=[];
+/* 周数据的可合并结构：
+     week.items : { [itemId]: 时刻 }   正数=已排入，负数=已移除（墓碑）
+     week.goals : { [goalId]: {text,done,cts,ts,del} }
+   用「墓碑」而不是直接删除，取消动作才能跨设备生效。 */
+function normalizeWeek(w){
+  if(!w) return w;
+  if(Array.isArray(w.items)){
+    const m={}, base=Date.now();
+    w.items.forEach((id,i)=>{ if(id) m[id]=base+i; });
+    w.items=m;
+  }
+  if(!w.items||typeof w.items!=="object") w.items={};
+  if(Array.isArray(w.goals)){
+    const m={};
+    w.goals.forEach((g,i)=>{ if(!g||!g.id) return;
+      m[g.id]={text:g.text||"",done:!!g.done,cts:g.cts||(i+1),ts:g.ts||(i+1),del:!!g.del}; });
+    w.goals=m;
+  }
+  if(!w.goals||typeof w.goals!=="object") w.goals={};
+  if(w.reflectionAt==null) w.reflectionAt=0;
   return w;
 }
+function ensureWeek(k){
+  k=k||weekKey();
+  if(!plan.weeks[k]) plan.weeks[k]={items:{},goals:{},reflection:"",reflectionAt:0,reviewedAt:null,rolledAt:null};
+  return normalizeWeek(plan.weeks[k]);
+}
 function curWeek(){ return ensureWeek(weekKey()); }
+function weekItems(w){
+  if(!w) return [];
+  if(Array.isArray(w.items)) return w.items.slice();          // 兼容未迁移的旧格式
+  const m=w.items||{};
+  return Object.keys(m).filter(k=>m[k]>0).sort((a,b)=>m[b]-m[a]);
+}
+function weekGoals(w){
+  if(!w) return [];
+  if(Array.isArray(w.goals)) return w.goals.slice();          // 兼容未迁移的旧格式
+  const m=w.goals||{};
+  return Object.keys(m).map(k=>({id:k,text:m[k].text||"",done:!!m[k].done,
+      cts:m[k].cts||m[k].ts||0,ts:m[k].ts||0}))
+    .filter(g=>!m[g.id].del).sort((a,b)=>(a.cts-b.cts)||(a.ts-b.ts));
+}
+function inWeek(w,id){ return !!w&&!!w.items&&w.items[id]>0; }
+function planAdd(id){ const w=curWeek(); w.items[id]=Date.now(); savePlan(); }
+function planRemove(id){ const w=curWeek(); w.items[id]=-Date.now(); savePlan(); }
 
 /* ============ 统计 ============ */
 function markedDay(){ days[todayKey()]=true; saveDays(); }
@@ -998,7 +1102,7 @@ function countByStage(){ const c=[0,0,0]; ITEMS().forEach(x=>c[stOf(x.id)]++); r
 function progressedToday(){
   const t=todayKey();
   return ITEMS().filter(x=>{ const p=progress[x.id];
-    return p&&p.ts&&p.st>=1&&dstr(new Date(p.ts))===t; }).length;
+    return p&&p.sts&&p.st>=1&&dstr(new Date(p.sts))===t; }).length;
 }
 function minutesOn(k){ return sessions.filter(s=>dstr(new Date(s.ts))===k).reduce((a,b)=>a+(b.min||0),0); }
 function minutesThisWeek(){
@@ -1064,7 +1168,7 @@ function candidates(){
   const ranked=rr.map((x,i)=>({x:x,i:i,key:
       ((!pathOn||prereqMet(x))?8:0)
     + ((focusG.indexOf(groupId(x))>=0)?4:0)
-    + ((wk.items.indexOf(x.id)>=0)?2:0)
+    + (inWeek(wk,x.id)?2:0)
     + fit(x)
   }));
   ranked.sort((a,b)=> (b.key-a.key) || (a.i-b.i));
@@ -1106,7 +1210,7 @@ function whyFocus(x){
   }
   if(!rk.doing && (settings.focusGroups||[]).indexOf(groupId(x))>=0)
     r.push("属于你的聚焦方向「<b>"+esc(groupShort(groupId(x)))+"</b>」");
-  if(!rk.doing && curWeek().items.indexOf(x.id)>=0)
+  if(!rk.doing && inWeek(curWeek(),x.id))
     r.push("你已把它排进本周");
   if(!rk.doing && budget<60){
     const m=x.item.m;
@@ -1126,8 +1230,7 @@ function swapFocus(){ swapIdx++; render(); }
 
 /* ============ 三态 ============ */
 function setStage(id,st){
-  const prev=progress[id]||{};
-  progress[id]={st:st,ts:Date.now(),note:prev.note||""};
+  writeRec(id,{st:st});
   if(st>=1) markedDay();
   swapIdx=0;                 // A: 状态一变就回到队首，否则「换一个」的偏移会让焦点跳走
   saveProgress();
@@ -1155,9 +1258,9 @@ function stopTimer(silent){
     const used=Math.round((Date.now()-(timer.endTs-timer.min*60000))/60000);
     if(used>=1){
       sessions.push({id:timer.id,min:used,ts:Date.now()}); saveSessions(); markedDay();
-      const p=progress[timer.id]||{};
-      if((p.st||0)<1) progress[timer.id]={st:1,ts:Date.now(),note:p.note||""};
-      saveProgress(); toast("本次专注 "+used+" 分钟，已记录 ✓");
+      if(recOf(timer.id).st<1) writeRec(timer.id,{st:1});
+      sessions[sessions.length-1].uid=timer.id+"|"+Date.now()+"|"+Math.random().toString(36).slice(2,7);
+      saveSessions(); saveProgress(); toast("本次专注 "+used+" 分钟，已记录 ✓");
     }
     swapIdx=0;
   }
@@ -1169,9 +1272,9 @@ function finishTimer(){
   timer=null; saveTimer();
   if(id){
     sessions.push({id:id,min:min,ts:Date.now()}); saveSessions(); markedDay();
-    const p=progress[id]||{};
-    if((p.st||0)<1) progress[id]={st:1,ts:Date.now(),note:p.note||""};
-    saveProgress();
+    if(recOf(id).st<1) writeRec(id,{st:1});
+    sessions[sessions.length-1].uid=id+"|"+Date.now()+"|"+Math.random().toString(36).slice(2,7);
+    saveSessions(); saveProgress();
     const it=byId(id);
     notify("专注完成 🎉",(it?it.item.t:"")+" · 已完成 "+min+" 分钟，去写下你的收获吧");
     toast("专注完成 🎉 已标记为学习中");
@@ -1211,6 +1314,7 @@ function tickTimer(){
 function tickLoop(){
   clearInterval(ticker);
   ticker=setInterval(tickTimer,1000);
+  setInterval(paintSyncChip,60000);        // 「x 分钟前」要自己走
 }
 
 /* ============ 导航 ============ */
@@ -1226,7 +1330,7 @@ function renderNav(){
   const badge={
     today: doneToday>=settings.daily ? "✓" : (doneToday||""),
     map:   c[1]||"",
-    plan:  curWeek().items.filter(id=>stOf(id)<2).length||"",
+    plan:  weekItems(curWeek()).filter(id=>stOf(id)<2).length||"",
     me:    ""
   };
   const has=v=>v!==""&&v!=null;
@@ -1258,7 +1362,7 @@ function renderToday(){
   const c=countByStage();
   const focus=currentFocus();
   const w=curWeek();
-  const wList=w.items.map(byId).filter(Boolean);
+  const wList=weekItems(w).map(byId).filter(Boolean);
   const wDone=wList.filter(x=>stOf(x.id)===2).length;
   const wDoing=wList.filter(x=>stOf(x.id)===1).length;
   const sk=streak();
@@ -1266,7 +1370,7 @@ function renderToday(){
   const startMin=focus?Math.min(focus.item.m,settings.focus):settings.focus;
 
   const prevK=weekKeyOf(-1), prevW=plan.weeks[prevK];
-  const prevLeft=prevW?(prevW.items.filter(id=>stOf(id)<2).length+(prevW.goals||[]).filter(g=>!g.done).length):0;
+  const prevLeft=prevW?(weekItems(prevW).filter(id=>stOf(id)<2).length+weekGoals(prevW).filter(g=>!g.done).length):0;
   const rollBanner=(prevLeft>0&&!(prevW&&prevW.rolledAt))
     ? `<div class="banner">📦 上周还有 <b>${prevLeft}</b> 件事没做完
         <button class="btn btn-sm" onclick="rollover()">滚入本周</button>
@@ -1323,7 +1427,7 @@ function renderToday(){
         63 个知识点全部标记为已掌握。<br/>去「我的」看看你的累计数据吧。</div></div>`;
 
   const doneList=ITEMS().filter(x=>{ const p=progress[x.id];
-    return p&&p.ts&&p.st>=1&&dstr(new Date(p.ts))===todayKey(); });
+    return p&&p.sts&&p.st>=1&&dstr(new Date(p.sts))===todayKey(); });
   const doneHtml=doneList.map(x=>`
     <div class="row">
       <span class="checkbox on" style="--pc:${x.pillar.color}">✓</span>
@@ -1509,12 +1613,12 @@ function onMapSearch(v){
 function renderPlan(){
   const k=weekKey(), w=ensureWeek(k);
   const prevK=weekKeyOf(-1), prevW=plan.weeks[prevK];
-  const wList=w.items.map(byId).filter(Boolean);
+  const wList=weekItems(w).map(byId).filter(Boolean);
   const wDone=wList.filter(x=>stOf(x.id)===2).length;
   const pc=wList.length?Math.round(wDone/wList.length*100):0;
-  const goals=w.goals||[];
-  const prevLeftItems=prevW?prevW.items.filter(id=>stOf(id)<2).length:0;
-  const prevLeftGoals=prevW?(prevW.goals||[]).filter(g=>!g.done).length:0;
+  const goals=weekGoals(w);
+  const prevLeftItems=prevW?weekItems(prevW).filter(id=>stOf(id)<2).length:0;
+  const prevLeftGoals=prevW?weekGoals(prevW).filter(g=>!g.done).length:0;
 
   const itemsHtml=wList.length?wList.map(x=>{
     const s=stOf(x.id);
@@ -1591,8 +1695,8 @@ function renderPlan(){
 
     ${lastWeeks.length?`<div class="sect-h">🕘 历史周</div><div class="panel">
       ${lastWeeks.map(kk=>{
-        const ww=plan.weeks[kk], n=(ww.items||[]).length;
-        const d=(ww.items||[]).filter(id=>stOf(id)===2).length;
+        const ww=plan.weeks[kk], wi=weekItems(ww), n=wi.length;
+        const d=wi.filter(id=>stOf(id)===2).length;
         return `<div class="row"><div class="r-tx" style="cursor:default"><span class="r-t">${weekLabel(kk)}</span>
           <div class="r-sub">${d}/${n} 完成${ww.reflection?" · 已复盘":""}</div></div></div>`;
       }).join("")}</div>`:""}`;
@@ -1603,7 +1707,6 @@ function renderMe(){
   const c=countByStage();
   const totalMin=sessions.reduce((a,b)=>a+(b.min||0),0);
   const pct=weightedPct();
-  const tok=getSyncToken();
   $("#view").innerHTML=`
     <div class="sect-h" style="margin-top:10px">📊 累计数据</div>
     <div class="stats">
@@ -1684,31 +1787,7 @@ function renderMe(){
       </div>
     </div>
 
-    <details class="acc" style="margin-top:12px">
-      <summary>☁️ 多端云同步<span style="margin-left:auto;font-size:11.5px;font-weight:600;color:var(--muted)">${tok?"已配置":"未配置 · 可选"}</span></summary>
-      <div class="acc-body">
-        <div class="note" style="margin-bottom:12px">
-          数据默认存在<b>本设备浏览器</b>，不配置也能正常用。<br/>
-          想在手机和 iPad 之间自动同步，再配这个（可选）。
-        </div>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <input class="field" type="password" id="syncToken"
-            placeholder="${tok?"已配置（重新粘贴可更新）":"粘贴 GitHub Fine-grained PAT"}" value="${esc(tok)}"/>
-          <button class="btn btn-primary btn-sm" onclick="saveSyncToken()">保存</button>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-          <button class="btn btn-line btn-sm" onclick="doSyncPull()">⬇ 下载云端</button>
-          <button class="btn btn-line btn-sm" onclick="doSyncPush()">⬆ 上传本地</button>
-          <button class="btn btn-line btn-sm" onclick="toggleSyncAuto()">自动同步：${isSyncAuto()?"开":"关"}</button>
-        </div>
-        <div class="note" id="syncStatus">${tok?"已配置，改动会自动同步。":"未配置 Token。"}</div>
-        <div class="note" style="margin-top:10px">
-          存于私有仓库 <b>${SYNC_OWNER}/${SYNC_REPO}</b>，仅你可见；Token 只存本机。<br/>
-          建 Token：GitHub → Settings → Developer settings → Fine-grained tokens →
-          只选仓库 <b>${SYNC_REPO}</b> → 权限 <b>Contents: Read and write</b>。
-        </div>
-      </div>
-    </details>
+    ${syncPanelHtml()}
 
     <div class="panel" style="margin-top:12px">
       <button class="btn btn-line btn-sm btn-block" style="color:#dc2626" onclick="resetAll()">🗑️ 清空全部数据</button>
@@ -1722,6 +1801,8 @@ function renderMe(){
 /* ============ 路由 ============ */
 function render(){
   renderNav();
+  paintSyncChip();
+  renderSyncBanner();
   if(activeTab==="today") renderToday();
   else if(activeTab==="map") renderMap();
   else if(activeTab==="plan") renderPlan();
@@ -1816,10 +1897,7 @@ function openTimerSheet(){
   if(timer) openSheet(timer.id);
   else toast("先从焦点卡片开始一个专注吧");
 }
-function onNote(id,v){
-  const p=progress[id]||{st:0,ts:Date.now()};
-  p.note=v; progress[id]=p; saveProgress();
-}
+function onNote(id,v){ writeRec(id,{note:v}); saveProgress(); }
 function setSetting(k,v){ settings[k]=v; saveSettings(); render(); toast("已保存设置"); }
 /* E: 「现在有几分钟」——同时决定计时长度，并让推荐优先推装得下的项 */
 function setBudget(n){ settings.focus=n; saveSettings(); swapIdx=0; render(); }
@@ -1847,30 +1925,36 @@ function enableNotify(){
 /* ============ 本周操作 ============ */
 function addToWeek(id){
   const w=curWeek();
-  if(w.items.indexOf(id)>=0){ toast("已经在本周计划里了"); return; }
-  w.items.push(id); savePlan(); render(); toast("已加入本周 📌");
+  if(inWeek(w,id)){ toast("已经在本周计划里了"); return; }
+  planAdd(id); render(); toast("已加入本周 📌");
 }
-function unplanItem(id){ const w=curWeek(); w.items=w.items.filter(x=>x!==id); savePlan(); render(); }
+function unplanItem(id){ planRemove(id); render(); }
 function autoPlanWeek(){
   const w=curWeek();
-  const pool=candidates().filter(x=>w.items.indexOf(x.id)<0&&stOf(x.id)<2);
+  const pool=candidates().filter(x=>!inWeek(w,x.id)&&stOf(x.id)<2);
   if(!pool.length){ toast("没有更多可排的动作了"); return; }
   const add=pool.slice(0,settings.weekly);
-  add.forEach(x=>w.items.push(x.id));
+  const t=Date.now();
+  add.forEach((x,i)=>{ w.items[x.id]=t+i; });
   savePlan(); render(); toast("已排入 "+add.length+" 个动作 🎯");
 }
 function addGoal(){
   const i=$("#goalInput"); if(!i) return;
   const t=i.value.trim(); if(!t) return;
-  curWeek().goals.push({id:"g"+Date.now(),text:t,done:false});
+  const w=curWeek(), now=Date.now();
+  w.goals["g"+now+Math.random().toString(16).slice(2)]={text:t,done:false,cts:now,ts:now,del:false};
   savePlan(); render(); toast("已添加");
 }
 function toggleGoal(id){
-  const g=curWeek().goals.filter(x=>x.id===id)[0]; if(!g) return;
-  g.done=!g.done; if(g.done) markedDay();
+  const g=curWeek().goals[id]; if(!g) return;
+  g.done=!g.done; g.ts=Date.now(); if(g.done) markedDay();
   savePlan(); render();
 }
-function delGoal(id){ const w=curWeek(); w.goals=w.goals.filter(x=>x.id!==id); savePlan(); render(); }
+function delGoal(id){
+  const g=curWeek().goals[id]; if(!g) return;
+  g.del=true; g.ts=Date.now();          // 墓碑：让「删除」也能跨设备生效
+  savePlan(); render();
+}
 function doReview(){
   const w=curWeek(), ta=$("#reflectInput");
   if(ta) w.reflection=ta.value;
@@ -1879,10 +1963,10 @@ function doReview(){
 function rollover(){
   const prev=plan.weeks[weekKeyOf(-1)];
   if(!prev){ toast("没有可滚入的内容"); return; }
-  const w=curWeek();
-  prev.items.forEach(id=>{ if(stOf(id)<2&&w.items.indexOf(id)<0) w.items.push(id); });
-  (prev.goals||[]).forEach(g=>{ if(!g.done)
-    w.goals.push({id:"g"+Date.now()+Math.random().toString(16).slice(2),text:g.text,done:false}); });
+  const w=curWeek(); let now=Date.now();
+  weekItems(prev).forEach(id=>{ if(stOf(id)<2 && !inWeek(w,id)) w.items[id]=now++; });
+  weekGoals(prev).forEach(g=>{ if(!g.done)
+    w.goals["g"+now+Math.random().toString(16).slice(2)]={text:g.text,done:false,cts:now,ts:now,del:false}; });
   prev.rolledAt=Date.now(); savePlan(); render(); toast("已滚入本周 📦");
 }
 function dismissRollover(){
@@ -1892,7 +1976,9 @@ function dismissRollover(){
 
 /* ============ 导入导出 / 主题 / 重置 ============ */
 function exportData(){
-  const payload={v:2,exportedAt:Date.now(),progress:progress,plan:plan,days:days,sessions:sessions,settings:settings};
+  /* 只导出学习数据。同步令牌存在另一个 localStorage 键里，永远不会进这个文件。 */
+  const payload={v:3,exportedAt:Date.now(),resetAt:resetAt||0,
+    progress:progress,plan:plan,days:days,sessions:sessions,settings:settings};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   a.download="ai-pm-progress-"+todayKey()+".json";
@@ -1906,13 +1992,17 @@ function importData(file){
     try{
       const d=JSON.parse(e.target.result);
       if(d&&d.progress){
-        progress=d.progress||{}; plan=d.plan||{weeks:{}};
+        progress={}; Object.keys(d.progress).forEach(k=>{ progress[k]=normRec(d.progress[k]); });
+        plan=d.plan||{weeks:{}};
+        Object.keys(plan.weeks||{}).forEach(k=>{ normalizeWeek(plan.weeks[k]); });
         days=d.days||{}; sessions=d.sessions||[];
+        sessions.forEach((s,i)=>{ if(!s.uid) s.uid=(s.id||"x")+"|"+(s.ts||0)+"|"+i; });
+        if(d.resetAt) resetAt=Math.max(resetAt||0,d.resetAt);
         if(d.settings) settings=Object.assign(settings,d.settings);
       }else if(d&&typeof d==="object"){
         progress={};
         Object.keys(d).forEach(k=>{ const p=d[k]||{};
-          progress[k]={st:p.done?2:(p.st||0),ts:p.ts||Date.now(),note:p.note||""}; });
+          progress[k]=normRec({st:p.done?2:(p.st||0),ts:p.ts||Date.now(),note:p.note||""}); });
       }else throw 0;
       saveProgress(true); savePlan(); saveDays(); saveSessions(); saveSettings();
       render(); toast("已导入 ⬆️");
@@ -1923,7 +2013,8 @@ function importData(file){
 function resetAll(){
   if(!confirm("清空所有进度、笔记、计划与专注记录？此操作不可撤销。")) return;
   progress={}; plan={weeks:{}}; days={}; sessions=[]; timer=null;
-  saveProgress(true); savePlan(); saveDays(); saveSessions(); saveTimer();
+  resetAt=Date.now();                      // 让「清空」也能同步，否则另一台设备会把数据推回来
+  saveReset(); saveProgress(true); savePlan(); saveDays(); saveSessions(); saveTimer();
   render(); toast("已清空 🗑️");
 }
 function setThemeIcon(t){
@@ -1941,76 +2032,493 @@ function toggleTheme(){
   setThemeIcon(nxt);
 }
 
-/* ============ 云同步（可选） ============ */
-const SYNC_OWNER="KaraChenDS", SYNC_REPO="ai-pm-progress", SYNC_PATH="progress.json";
-const SYNC_TOKEN_KEY="aippm_sync_token", SYNC_AUTO_KEY="aippm_sync_auto";
-let pushTimer=null;
-function getSyncToken(){ return localStorage.getItem(SYNC_TOKEN_KEY)||""; }
-function isSyncAuto(){ return localStorage.getItem(SYNC_AUTO_KEY)!=="0"; }
-function syncApiUrl(){ return "https://api.github.com/repos/"+SYNC_OWNER+"/"+SYNC_REPO+"/contents/"+SYNC_PATH; }
-function syncHeaders(t){ return {Authorization:"Bearer "+t,Accept:"application/vnd.github+json"}; }
-function encodeB64(s){ return btoa(unescape(encodeURIComponent(s))); }
-function decodeB64(b){ return decodeURIComponent(escape(atob(b.replace(/\s/g,"")))); }
-function updateSyncStatus(m){ const el=$("#syncStatus"); if(el) el.textContent=m; }
+/* =====================================================================
+   多端云同步（GitHub Contents API）
+   —— 安全边界：代码里只内置 owner/repo/path，绝不内置 token。
+      token 只存每台设备自己的 localStorage，且导出与同步载荷都必须剥离它。
+   —— 合并策略：分层合并，不是「整条记录取较新」。
+   ===================================================================== */
+const SYNC_DEFAULTS={ owner:"KaraChenDS", repo:"ai-pm-progress", path:"progress.json" };
+const SY_KEY="aippm_sync_v1";        // {owner,repo,path,token}
+const SYNC_META_KEY="aippm_sync_meta_v1";  // {lastOk,lastTry,lastErr,lastMsg}
+
+function syncSettings(){
+  let j={}; try{ j=JSON.parse(localStorage.getItem(SY_KEY))||{}; }catch(e){ j={}; }
+  return { owner:j.owner||SYNC_DEFAULTS.owner,
+           repo: j.repo ||SYNC_DEFAULTS.repo,
+           path: j.path ||SYNC_DEFAULTS.path,
+           token:j.token||"" };
+}
+function saveSyncSettings(s){ localStorage.setItem(SY_KEY,JSON.stringify(s)); }
+function syncToken(){ return syncSettings().token; }
+function syncUrl(){
+  const s=syncSettings();
+  return "https://api.github.com/repos/"+encodeURIComponent(s.owner)+"/"+
+         encodeURIComponent(s.repo)+"/contents/"+
+         encodeURIComponent(s.path).replace(/%2F/g,"/");
+}
+function syHeaders(tok){ return { Authorization:"Bearer "+tok, Accept:"application/vnd.github+json" }; }
+function b64enc(str){
+  const b=new TextEncoder().encode(str); let s="";
+  b.forEach(x=>{ s+=String.fromCharCode(x); }); return btoa(s);
+}
+function b64dec(s){
+  const bin=atob(String(s).replace(/\s/g,"")); const u=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+  return new TextDecoder().decode(u);
+}
+/* 稳定序列化：键排序后比较，避免「键顺序不同」被误判成有变化 */
+function stableStr(o){
+  if(o===null||typeof o!=="object") return JSON.stringify(o);
+  if(Array.isArray(o)) return "["+o.map(stableStr).join(",")+"]";
+  return "{"+Object.keys(o).sort().map(k=>JSON.stringify(k)+":"+stableStr(o[k])).join(",")+"}";
+}
+
+/* ============ 同步元信息（给 UI 看，失败必须留痕） ============ */
+let syncMeta={lastOk:0,lastTry:0,lastErr:"",lastMsg:""};
+function loadSyncMeta(){ try{ syncMeta=JSON.parse(localStorage.getItem(SYNC_META_KEY))||syncMeta; }catch(e){} }
+function saveSyncMeta(){ localStorage.setItem(SYNC_META_KEY,JSON.stringify(syncMeta)); }
+function syncMarkTry(){ syncMeta.lastTry=Date.now(); saveSyncMeta(); paintSyncChip(); }
+function syncMarkOk(msg){ syncMeta.lastOk=Date.now(); syncMeta.lastErr=""; syncMeta.lastMsg=msg||"";
+  saveSyncMeta(); paintSyncChip(); }
+function syncMarkErr(err,msg){ syncMeta.lastErr=err||"未知错误"; syncMeta.lastMsg=msg||"";
+  syncMeta.lastTry=Date.now(); saveSyncMeta(); paintSyncChip(); renderSyncBanner(); }
+function agoText(ts){
+  if(!ts) return "从未";
+  const d=Math.floor((Date.now()-ts)/1000);
+  if(d<10) return "刚刚"; if(d<60) return d+" 秒前";
+  if(d<3600) return Math.floor(d/60)+" 分钟前";
+  if(d<86400) return Math.floor(d/3600)+" 小时前";
+  return Math.floor(d/86400)+" 天前";
+}
+/* 网络故障与令牌故障必须给不同文案，否则用户会把网络问题当成令牌配错 */
+function netMsg(e){
+  const m=String((e&&e.message)||e||"");
+  if(/load failed|failed to fetch|networkerror|network request failed|fetch/i.test(m))
+    return "连不上 api.github.com —— 网络被限制或需要代理，不是令牌问题";
+  return "同步出错："+m;
+}
+function friendlyHttp(code){
+  if(code===401) return "令牌无效或已过期（HTTP 401）";
+  if(code===403) return "权限不足或触发限流（HTTP 403）";
+  if(code===404) return "仓库或文件不存在（HTTP 404）";
+  if(code===409) return "与另一台设备同时写入，正在重试（HTTP 409）";
+  return "HTTP "+code;
+}
+
+/* ============ 载荷与签名 ============ */
+function payload(){
+  return { v:3, updatedAt:Date.now(), resetAt:resetAt||0,
+    progress:progress, plan:plan, days:days, sessions:sessions, settings:settings };
+}
+function stateSig(o){
+  o=o||{};
+  const ss=(o.sessions||[]).slice().sort((a,b)=>String(a.uid)<String(b.uid)?-1:1);
+  return stableStr({ resetAt:o.resetAt||0, progress:o.progress||{},
+    weeks:(o.plan&&o.plan.weeks)||{}, days:o.days||{}, sessions:ss, settings:o.settings||{} });
+}
+function localSig(){ return stateSig({resetAt:resetAt,progress:progress,plan:plan,days:days,sessions:sessions,settings:settings}); }
+/* 兼容 v1 的 {updatedAt,data,plan} 载荷 */
+function normalizePayload(raw){
+  raw=raw||{};
+  if(raw.v>=3||raw.progress){
+    return { resetAt:raw.resetAt||0, progress:raw.progress||{}, plan:raw.plan||{weeks:{}},
+             days:raw.days||{}, sessions:raw.sessions||[], settings:raw.settings||{} };
+  }
+  const prog={};
+  Object.keys(raw.data||{}).forEach(k=>{ const p=raw.data[k]||{};
+    prog[k]=normRec({st:p.done?2:(p.st||0),ts:p.ts||0,note:p.note||""}); });
+  const weeks={}; const ow=(raw.plan&&raw.plan.weeks)||{};
+  Object.keys(ow).forEach(k=>{ weeks[k]=normalizeWeek(JSON.parse(JSON.stringify(ow[k]))); });
+  return { resetAt:0, progress:prog, plan:{weeks:weeks}, days:{}, sessions:[], settings:{} };
+}
+
+/* ============ 分层合并 ============ */
 function mergeProgress(a,b){
   a=a||{}; b=b||{};
   const out={}, ids={};
-  Object.keys(a).forEach(k=>ids[k]=1); Object.keys(b).forEach(k=>ids[k]=1);
+  Object.keys(a).forEach(k=>{ ids[k]=1; }); Object.keys(b).forEach(k=>{ ids[k]=1; });
   Object.keys(ids).forEach(id=>{
     const x=a[id], y=b[id];
-    if(!x){ out[id]=y; return; }
-    if(!y){ out[id]=x; return; }
-    const nw=(y.ts||0)>(x.ts||0)?y:x, od=(nw===x)?y:x;
-    out[id]={st:nw.st,ts:nw.ts,note:((nw.note||"").length>=(od.note||"").length?(nw.note||""):(od.note||""))};
+    if(!x){ out[id]=normRec(y); return; }
+    if(!y){ out[id]=normRec(x); return; }
+    const X=normRec(x), Y=normRec(y);
+    /* 状态与笔记各按自己的时间戳取较新 —— 这是不丢数据的关键 */
+    const st=(Y.sts>X.sts)?Y.st:(X.sts>Y.sts?X.st:((Y.st>X.st)?Y.st:X.st));
+    let note;
+    if(Y.nts>X.nts) note=Y.note;
+    else if(X.nts>Y.nts) note=X.note;
+    else note=((Y.note||"").length>(X.note||"").length?Y.note:X.note);  // 同时发生时不拿空值抹掉内容
+    const sts=Math.max(X.sts,Y.sts), nts=Math.max(X.nts,Y.nts);
+    out[id]={ st:st, sts:sts, note:note||"", nts:nts, ts:Math.max(sts,nts) };
   });
   return out;
 }
-async function syncPull(){
-  const tok=getSyncToken(); if(!tok){ updateSyncStatus("未配置 Token。"); return; }
-  updateSyncStatus("正在下载…");
-  try{
-    const r=await fetch(syncApiUrl(),{headers:syncHeaders(tok)});
-    if(r.status===404){ updateSyncStatus("云端暂无数据，点「上传本地」创建。"); return; }
-    if(!r.ok){ updateSyncStatus("下载失败 HTTP "+r.status+"（检查 Token 权限）"); return; }
-    const j=await r.json();
-    const remote=JSON.parse(decodeB64(j.content));
-    progress=mergeProgress(progress, remote.progress||remote.data||remote);
-    if(remote.plan) plan=Object.assign({weeks:{}},plan,remote.plan);
-    if(remote.days) days=Object.assign({},days,remote.days);
-    if(remote.settings) settings=Object.assign(settings,remote.settings);
-    saveProgress(true); savePlan(); saveDays(); saveSettings();
-    render(); updateSyncStatus("已下载并合并 ✓");
-  }catch(e){ updateSyncStatus("下载出错："+e.message); }
+/* 集合类字段逐键合并：正数=该时刻排入，负数=该时刻移除（墓碑） */
+function mergeByTime(a,b){
+  const A=a||{}, B=b||{};
+  if(Array.isArray(A)||Array.isArray(B)){    // 兜底：万一还是老数组
+    const m={}, base=Date.now();
+    (Array.isArray(A)?A:Object.keys(A)).forEach((k,i)=>{ m[k]=Array.isArray(A)?base+i:1; });
+    (Array.isArray(B)?B:Object.keys(B)).forEach((k,i)=>{ if(m[k]==null) m[k]=base+1000+i; });
+    return m;
+  }
+  const out={}, ids={};
+  Object.keys(A).forEach(k=>{ ids[k]=1; }); Object.keys(B).forEach(k=>{ ids[k]=1; });
+  Object.keys(ids).forEach(k=>{
+    const x=A[k], y=B[k];
+    if(x===undefined) out[k]=y;
+    else if(y===undefined) out[k]=x;
+    else out[k]=Math.abs(y)>Math.abs(x)?y:x;
+  });
+  return out;
 }
-async function syncPush(){
-  const tok=getSyncToken(); if(!tok){ updateSyncStatus("未配置 Token。"); return; }
-  updateSyncStatus("正在上传…");
+function mergePlan(a,b){
+  const A=(a&&a.weeks)||{}, B=(b&&b.weeks)||{};
+  const out={weeks:{}}, keys={};
+  Object.keys(A).forEach(k=>{ keys[k]=1; }); Object.keys(B).forEach(k=>{ keys[k]=1; });
+  Object.keys(keys).forEach(k=>{
+    const x=A[k], y=B[k];
+    if(!x){ out.weeks[k]=normalizeWeek(JSON.parse(JSON.stringify(y))); return; }
+    if(!y){ out.weeks[k]=normalizeWeek(JSON.parse(JSON.stringify(x))); return; }
+    const X=normalizeWeek(JSON.parse(JSON.stringify(x))), Y=normalizeWeek(JSON.parse(JSON.stringify(y)));
+    const w={ items:mergeByTime(X.items,Y.items), goals:{},
+      reflection:"", reflectionAt:0,
+      reviewedAt:Math.max(X.reviewedAt||0,Y.reviewedAt||0)||null,
+      rolledAt:Math.max(X.rolledAt||0,Y.rolledAt||0)||null };
+    /* 目标：按 id 并集，同一 id 取较新的一版（含删除墓碑） */
+    const gids={};
+    Object.keys(X.goals||{}).forEach(g=>{ gids[g]=1; }); Object.keys(Y.goals||{}).forEach(g=>{ gids[g]=1; });
+    Object.keys(gids).forEach(g=>{
+      const p=X.goals[g], q=Y.goals[g];
+      if(!p){ w.goals[g]=q; return; }
+      if(!q){ w.goals[g]=p; return; }
+      w.goals[g]=((q.ts||0)>=(p.ts||0))?q:p;
+    });
+    /* 复盘正文按自己的时间戳，且不让空值抹掉已有内容 */
+    const xa=X.reflectionAt||0, ya=Y.reflectionAt||0;
+    if(ya>xa){ w.reflection=Y.reflection||""; w.reflectionAt=ya; }
+    else if(xa>ya){ w.reflection=X.reflection||""; w.reflectionAt=xa; }
+    else{ w.reflection=((Y.reflection||"").length>(X.reflection||"").length?Y.reflection:X.reflection)||"";
+          w.reflectionAt=xa; }
+    out.weeks[k]=w;
+  });
+  return out;
+}
+function mergeSessions(a,b){
+  const out={}, ids={};
+  (a||[]).forEach(s=>{ if(s) ids[s.uid||((s.id||"x")+"|"+(s.ts||0))]=s; });
+  const map2={};
+  (b||[]).forEach(s=>{ if(s) map2[s.uid||((s.id||"x")+"|"+(s.ts||0))]=s; });
+  Object.keys(map2).forEach(k=>{ if(!ids[k]) ids[k]=map2[k]; });
+  return Object.keys(ids).map(k=>ids[k]);
+}
+function mergeSettings(a,b){
+  a=a||{}; b=b||{};
+  return ((b.settingsAt||0)>=(a.settingsAt||0)) ? Object.assign({},a,b) : Object.assign({},b,a);
+}
+/* 清空墓碑：比 resetAt 旧的记录一律丢弃 */
+function applyReset(){
+  if(!resetAt) return;
+  Object.keys(progress).forEach(id=>{ const r=normRec(progress[id]);
+    if(Math.max(r.sts,r.nts)<resetAt) delete progress[id]; else progress[id]=r; });
+  Object.keys(days).forEach(k=>{ if(new Date(k+"T00:00:00").getTime()<resetAt) delete days[k]; });
+  sessions=sessions.filter(s=>(s.ts||0)>=resetAt);
+  Object.keys(plan.weeks||{}).forEach(k=>{
+    const w=normalizeWeek(plan.weeks[k]);
+    Object.keys(w.items).forEach(id=>{ if(Math.abs(w.items[id])<resetAt) delete w.items[id]; });
+    Object.keys(w.goals).forEach(g=>{ if((w.goals[g].ts||0)<resetAt) delete w.goals[g]; });
+  });
+}
+/* 把云端状态合并进本机，返回是否真的变了 */
+function mergeRemoteState(rm){
+  const before=localSig();
+  if(rm.resetAt) resetAt=Math.max(resetAt||0, rm.resetAt);
+  progress=mergeProgress(progress, rm.progress);
+  Object.keys(rm.days||{}).forEach(k=>{ days[k]=true; });
+  sessions=mergeSessions(sessions, rm.sessions);
+  plan=mergePlan(plan, rm.plan);
+  settings=mergeSettings(settings, rm.settings);
+  applyReset();
+  const after=localSig();
+  if(before!==after){
+    saveProgress(true); savePlan(); saveDays(); saveSessions(); saveSettings(); saveReset();
+  }
+  return before!==after;
+}
+/* 本机是否比云端更全 —— 拉取后据此回写，否则「连接前就有的本地数据」永远上不去 */
+function needsPushBack(remoteData){
+  return localSig() !== stateSig({
+    resetAt:remoteData.resetAt||0, progress:remoteData.progress||{},
+    plan:remoteData.plan||{weeks:{}}, days:remoteData.days||{},
+    sessions:remoteData.sessions||[], settings:remoteData.settings||{} });
+}
+
+/* ============ 拉取 / 推送 ============ */
+let syncing=false, pendingPush=null, pushTimer=null;
+async function syncPull(opts){
+  const silent=!!(opts&&opts.silent);
+  const s=syncSettings();
+  if(!s.token){ if(!silent) toast("还没配置同步令牌"); return; }
+  if(syncing) return;
+  syncing=true; syncMarkTry();
+  try{
+    const r=await fetch(syncUrl(),{headers:syHeaders(s.token),cache:"no-store"});
+    if(r.status===404){                    // 云端还没有文件 → 用本机数据创建
+      syncing=false;
+      await syncPush(silent,true);
+      return;
+    }
+    if(!r.ok){ syncMarkErr(friendlyHttp(r.status)); if(!silent) toast(friendlyHttp(r.status)); syncing=false; return; }
+    const j=await r.json();
+    let remote;
+    try{ remote=normalizePayload(JSON.parse(b64dec(j.content))); }
+    catch(e){ syncMarkErr("云端文件不是合法 JSON"); syncing=false; return; }
+    const changed=mergeRemoteState(remote);
+    if(changed) render();
+    syncMarkOk("已合并云端");
+    const need=needsPushBack(remote);
+    syncing=false;
+    if(need) await syncPush(silent);       // 合并后本机是超集，回写不会丢数据
+    else if(!silent) toast("已是最新 ✓");
+  }catch(e){
+    syncing=false;
+    syncMarkErr(netMsg(e));
+    if(!silent) toast(netMsg(e));
+  }
+}
+async function syncPush(silent,isCreate){
+  const s=syncSettings();
+  if(!s.token){ if(!silent) toast("还没配置同步令牌"); return; }
+  syncMarkTry();
   try{
     let sha=null;
-    const g=await fetch(syncApiUrl(),{headers:syncHeaders(tok)});
-    if(g.ok) sha=(await g.json()).sha;
-    const payload=JSON.stringify({v:2,updatedAt:Date.now(),progress:progress,plan:plan,days:days,settings:settings});
-    const body={message:"sync: progress",content:encodeB64(payload)};
+    const g=await fetch(syncUrl(),{headers:syHeaders(s.token),cache:"no-store"});
+    if(g.ok){
+      const j=await g.json();
+      sha=j.sha;
+      /* 关键：推送前先把云端并进本机。
+         否则本机若停留在旧状态（例如防抖推送晚于另一台设备的写入），
+         整文件覆盖会把对方的新数据抹掉。合并后本机是超集，写回一定安全。 */
+      try{
+        const remote=normalizePayload(JSON.parse(b64dec(j.content)));
+        if(mergeRemoteState(remote)) render();
+      }catch(e){}
+    }
+    else if(g.status!==404){ syncMarkErr(friendlyHttp(g.status)); if(!silent) toast(friendlyHttp(g.status)); return; }
+    const body={ message:"sync "+(isCreate?"init ":"")+new Date().toISOString(),
+                 content:b64enc(JSON.stringify(payload())) };
     if(sha) body.sha=sha;
-    const r=await fetch(syncApiUrl(),{method:"PUT",
-      headers:Object.assign({"Content-Type":"application/json"},syncHeaders(tok)),body:JSON.stringify(body)});
-    if(r.ok) updateSyncStatus("已上传云端 ✓");
-    else{ const e=await r.json().catch(()=>({})); updateSyncStatus("上传失败 HTTP "+r.status+" "+(e.message||"")); }
-  }catch(e){ updateSyncStatus("上传出错："+e.message); }
+    const r=await fetch(syncUrl(),{method:"PUT",
+      headers:Object.assign({"Content-Type":"application/json"},syHeaders(s.token)),
+      body:JSON.stringify(body)});
+    if(r.ok){ syncMarkOk("已上传云端"); if(!silent) toast("已同步到云端 ✓"); return; }
+    if(r.status===409){                     // 另一台设备刚写过 → 重拉再推一轮
+      const rr=await fetch(syncUrl(),{headers:syHeaders(s.token),cache:"no-store"});
+      if(rr.ok){
+        const jj=await rr.json();
+        const retry=await fetch(syncUrl(),{method:"PUT",
+          headers:Object.assign({"Content-Type":"application/json"},syHeaders(s.token)),
+          body:JSON.stringify({ message:"sync retry "+new Date().toISOString(),
+            content:b64enc(JSON.stringify(payload())), sha:jj.sha })});
+        if(retry.ok){ syncMarkOk("已上传云端（重试成功）"); return; }
+      }
+      syncMarkErr("与另一台设备同时写入，重试仍未成功");
+      if(!silent) toast("同步冲突，稍后再试");
+      return;
+    }
+    syncMarkErr(friendlyHttp(r.status));
+    if(!silent) toast(friendlyHttp(r.status));
+  }catch(e){ syncMarkErr(netMsg(e)); if(!silent) toast(netMsg(e)); }
 }
+/* 任何改动都触发，防抖 2.5 秒 */
 function schedulePush(){
-  if(!getSyncToken()||!isSyncAuto()) return;
-  clearTimeout(pushTimer); pushTimer=setTimeout(syncPush,1800);
+  if(!syncToken()) return;
+  clearTimeout(pushTimer);
+  pushTimer=setTimeout(()=>{ syncPush(true); }, 2500);
 }
+
+/* ============ 自动触发：无感知但可诊断 ============ */
+function autoSync(){
+  if(!syncToken()) return;
+  if(document.visibilityState==="visible") syncPull({silent:true});
+}
+window.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") autoSync(); });
+window.addEventListener("online",()=>{ autoSync(); });
+window.addEventListener("focus",()=>{ autoSync(); });
+
+/* ============ 新设备一键连接：#t=<token> ============ */
+window.addEventListener("hashchange",()=>{
+  if(bootstrapTokenFromHash()){ render(); syncPull({silent:true}); }
+});
+function bootstrapTokenFromHash(){
+  const m=/[#&]t=([^&]+)/.exec(location.hash||"");
+  if(!m) return false;
+  try{
+    const tok=decodeURIComponent(m[1]).trim();
+    if(!tok) return false;
+    saveSyncSettings(Object.assign({},syncSettings(),{token:tok}));
+    history.replaceState(null,"",location.pathname+location.search);   // 立刻抹掉
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ============ 诊断 ============ */
+async function runDiagnostics(){
+  const out=[];
+  const s=syncSettings();
+  out.push("① 同步配置："+s.owner+"/"+s.repo+" → "+s.path);
+  if(!s.token){ out.push("   ✕ 本机没有保存令牌 —— 请先粘贴 Fine-grained PAT"); return out.join("\n"); }
+  out.push("   ✓ 令牌已保存（"+s.token.slice(0,4)+"…"+s.token.slice(-4)+"，共 "+s.token.length+" 字符）");
+  out.push("② 测试能否访问 api.github.com …");
+  try{
+    const r=await fetch("https://api.github.com/",{cache:"no-store"});
+    out.push("   ✓ 有响应（HTTP "+r.status+"）—— 拿到任何响应都算网络通");
+    if(r.status===403) out.push("     · 403 通常是未认证限流，不影响带令牌的请求");
+  }catch(e){
+    out.push("   ✕ 连不上："+netMsg(e));
+    out.push("     · 中国大陆网络常见：github.io 能开 ≠ api.github.com 能通，两者可能被分别处理");
+    out.push("     · 请用手机 Safari 直接打开 https://api.github.com/ 确认，必要时挂代理");
+    return out.join("\n");
+  }
+  try{
+    const r=await fetch("https://api.github.com/user",{headers:syHeaders(s.token),cache:"no-store"});
+    if(r.status===401){ out.push("③ 令牌校验：✕ 无效或已过期（401）—— 重新生成一个"); return out.join("\n"); }
+    if(r.status===403){ out.push("③ 令牌校验：✕ 权限不足或触发限流（403）"); return out.join("\n"); }
+    if(!r.ok){ out.push("③ 令牌校验：✕ "+friendlyHttp(r.status)); return out.join("\n"); }
+    const u=await r.json();
+    out.push("③ 令牌校验：✓ 有效（账号 "+u.login+"）");
+    const rr=await fetch(syncUrl(),{headers:syHeaders(s.token),cache:"no-store"});
+    if(rr.status===404) out.push("④ 数据文件：还不存在 —— 下次同步会用本机数据创建（正常）");
+    else if(rr.ok){ const j=await rr.json();
+      out.push("④ 数据文件：✓ 存在，约 "+Math.round((j.size||0)/1024*10)/10+" KB"); }
+    else out.push("④ 数据文件：✕ "+friendlyHttp(rr.status)+" —— 检查仓库名与 Contents 权限");
+  }catch(e){ out.push("③/④ 请求失败："+netMsg(e)); }
+  return out.join("\n");
+}
+
+/* ============ UI：状态胶囊与失败横幅 ============ */
+function syncChipState(){
+  if(!syncToken()) return {ic:"☁️",txt:"未连接",cls:"off"};
+  if(syncMeta.lastErr) return {ic:"⚠️",txt:"同步异常",cls:"err"};
+  if(syncing) return {ic:"🔄",txt:"同步中",cls:"busy"};
+  return {ic:"☁️",txt:syncMeta.lastOk?agoText(syncMeta.lastOk):"待同步",cls:"ok"};
+}
+function paintSyncChip(){
+  const st=syncChipState();
+  $$(".sync-chip").forEach(el=>{
+    const rail=el.classList.contains("rail-link");
+    el.classList.remove("ok","err","busy","off");
+    el.classList.add(st.cls);
+    el.innerHTML= rail
+      ? '<span class="rn-ic">'+st.ic+'</span><span class="sc-tx">'+esc(st.txt)+"</span>"
+      : '<span class="sc-ic">'+st.ic+'</span><span class="sc-tx">'+esc(st.txt)+"</span>";
+  });
+}
+function renderSyncBanner(){
+  const el=$("#syncBanner");
+  if(!el) return;
+  if(!syncToken()||!syncMeta.lastErr){ el.innerHTML=""; el.classList.add("hidden"); return; }
+  el.classList.remove("hidden");
+  el.innerHTML='<div class="banner err">⚠️ 同步失败：'+esc(syncMeta.lastErr)+
+    '<button class="btn btn-sm" onclick="manualSync()">重试</button></div>';
+}
+function manualSync(){ syncPull({silent:false}); }
+function doSyncPull(){ syncPull({silent:false}); }
+function doSyncPush(){ syncPush(false); }
+function toggleSyncAuto(){ toast("现在同步是全自动的，切回前台会自动拉取"); }
 function saveSyncToken(){
   const el=$("#syncToken"), val=el?el.value.trim():"";
-  if(val){ localStorage.setItem(SYNC_TOKEN_KEY,val); syncPull(); toast("已保存 Token"); }
-  else{ localStorage.removeItem(SYNC_TOKEN_KEY); toast("Token 已清除"); }
+  const cur=syncSettings();
+  if(val){ saveSyncSettings(Object.assign({},cur,{token:val})); toast("令牌已保存，正在同步…"); syncPull({silent:true}); }
+  else{ saveSyncSettings(Object.assign({},cur,{token:""})); toast("已断开同步（本机数据保留）"); }
   render();
 }
-function toggleSyncAuto(){ localStorage.setItem(SYNC_AUTO_KEY,isSyncAuto()?"0":"1"); render(); }
-function doSyncPull(){ syncPull(); }
-function doSyncPush(){ syncPush(); }
+function saveSyncRepo(){
+  const o=$("#syOwner"), r=$("#syRepo"), p=$("#syPath");
+  const cur=syncSettings();
+  saveSyncSettings(Object.assign({},cur,{
+    owner:(o&&o.value.trim())||SYNC_DEFAULTS.owner,
+    repo:(r&&r.value.trim())||SYNC_DEFAULTS.repo,
+    path:(p&&p.value.trim())||SYNC_DEFAULTS.path }));
+  toast("仓库配置已保存"); render();
+}
+/* 生成给新设备用的一键连接链接（令牌会留在聊天记录里，用完即弃更稳妥） */
+function connectLink(){
+  const s=syncSettings();
+  if(!s.token){ toast("先在本机配置令牌"); return; }
+  const url=location.origin+location.pathname+"#t="+encodeURIComponent(s.token);
+  const done=()=>toast("连接链接已复制，在另一台设备打开即可");
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done).catch(()=>{ prompt("复制这条链接到另一台设备打开：",url); });
+  }else prompt("复制这条链接到另一台设备打开：",url);
+}
+async function showDiagnostics(){
+  const box=$("#diagOut");
+  if(!box) return;
+  box.textContent="正在逐环节检查…";
+  box.textContent=await runDiagnostics();
+}
+
+/* ============ 同步设置面板 ============ */
+function syncPanelHtml(){
+  const s=syncSettings();
+  const st=syncChipState();
+  const linked=!!s.token;
+  return `<details class="acc" style="margin-top:12px" ${linked?"":"open"}>
+    <summary>☁️ 多端云同步
+      <span style="margin-left:auto;font-size:11.5px;font-weight:600;color:var(--muted)">
+        ${linked?("已连接 · "+(syncMeta.lastOk?agoText(syncMeta.lastOk):"待同步")):"未连接 · 可选"}</span></summary>
+    <div class="acc-body">
+      <div class="note" style="margin-bottom:12px">
+        数据默认只存在<b>本设备浏览器</b>，不配置也能正常用。<br/>
+        想让手机 / iPad / 电脑看到同一份进度，就连接一次。
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input class="field" type="password" id="syncToken"
+          placeholder="${linked?"已配置（重新粘贴可替换）":"粘贴 GitHub Fine-grained PAT"}" value="${esc(s.token)}"/>
+        <button class="btn btn-primary btn-sm" onclick="saveSyncToken()">保存</button>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn btn-line btn-sm" onclick="manualSync()">🔄 立即同步</button>
+        <button class="btn btn-line btn-sm" onclick="connectLink()">🔗 复制新设备连接链接</button>
+        <button class="btn btn-line btn-sm" onclick="showDiagnostics()">🩺 诊断</button>
+      </div>
+
+      ${linked?`<div class="note" style="margin-bottom:12px">
+        状态：<b>${st.ic} ${esc(st.txt)}</b><br/>
+        上次成功：<b>${syncMeta.lastOk?agoText(syncMeta.lastOk)+"（"+dstr(new Date(syncMeta.lastOk))+"）":"从未"}</b><br/>
+        ${syncMeta.lastErr?('上次失败：<b style="color:#dc2626">'+esc(syncMeta.lastErr)+"</b><br/>"):""}
+        同步是自动的：打开应用、切回前台、联网、以及任何改动后 2.5 秒。
+      </div>`:""}
+
+      <pre id="diagOut" class="diag"></pre>
+
+      <details class="acc" style="box-shadow:none;margin-top:10px">
+        <summary style="padding:10px 0;min-height:auto;font-size:13px">⚙️ 存储位置（一般不用改）</summary>
+        <div style="padding-top:10px">
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input class="field" id="syOwner" placeholder="owner" value="${esc(s.owner)}"/>
+            <input class="field" id="syRepo" placeholder="repo" value="${esc(s.repo)}"/>
+          </div>
+          <div style="display:flex;gap:8px">
+            <input class="field" id="syPath" placeholder="path" value="${esc(s.path)}"/>
+            <button class="btn btn-line btn-sm" onclick="saveSyncRepo()">保存</button>
+          </div>
+        </div>
+      </details>
+
+      <div class="note" style="margin-top:12px">
+        数据存于<b>私有仓库</b> ${esc(s.owner)}/${esc(s.repo)}，仅你可见。<br/>
+        令牌只存本机浏览器，<b>不会写进代码、也不会进导出文件</b>。<br/><br/>
+        建令牌：GitHub → Settings → Developer settings → Fine-grained tokens →
+        只勾仓库 <b>${esc(s.repo)}</b> → 权限 <b>Contents: Read and write</b>。
+      </div>
+    </div>
+  </details>`;
+}
 
 /* ============ 启动 ============ */
 function bindStatic(){
@@ -2025,12 +2533,17 @@ function bindStatic(){
   const saved=localStorage.getItem(THEME_KEY)||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
   document.documentElement.setAttribute("data-theme",saved);
   setThemeIcon(saved);
+  loadSyncMeta();
+  const linked=bootstrapTokenFromHash();     // #t=<token> 一键连接
   loadAll(); bindStatic(); render(); tickLoop();
   if(timer&&remainingMs()<=0) finishTimer();
   if("serviceWorker" in navigator){
     try{ navigator.serviceWorker.register("sw.js").catch(()=>{}); }catch(e){}
   }
-  if(getSyncToken()) syncPull();
+  if(syncToken()){
+    if(linked) toast("已连接，正在同步…");
+    syncPull({silent:true});
+  }
 })();
 </script>
 </body>
