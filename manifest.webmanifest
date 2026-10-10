@@ -1,10 +1,12 @@
 {
-  "name": "AI 产品经理知识体系 · 学习地图",
-  "short_name": "AI PM 地图",
-  "description": "硬实力 × 软实力 × 社会化实践，可打卡的 AI 产品经理成长地图。",
+  "name": "AI 产品经理知识体系",
+  "short_name": "AI PM 体系",
+  "description": "把 63 个知识点拆成今天就能做完的第一步动作，配专注计时与周计划。",
+  "lang": "zh-CN",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#f4f5fb",
   "theme_color": "#6366f1",
   "icons": [

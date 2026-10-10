@@ -3,289 +3,567 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="description" content="AI 产品经理知识体系学习地图：硬实力 + 软实力 + 社会化实践行动计划，支持学习打卡与进度追踪。" />
-<title>AI 产品经理知识体系 · 学习地图</title>
+<meta name="description" content="AI 产品经理知识体系：把 63 个知识点拆成今天就能做完的第一步动作，配专注计时与周计划。" />
+<title>AI 产品经理知识体系</title>
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg"/>
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png"/>
 <link rel="apple-touch-icon" href="icons/icon-180.png"/>
 <link rel="manifest" href="manifest.webmanifest"/>
 <meta name="theme-color" content="#6366f1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="AI PM 体系"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <style>
   :root{
     --bg:#f4f5fb; --surface:#ffffff; --surface-2:#f8f9ff; --text:#16182b; --muted:#6b7089;
-    --border:#e7e9f4; --shadow:0 6px 24px rgba(30,34,80,.07); --shadow-lg:0 14px 44px rgba(30,34,80,.13);
-    --hard:#6366f1; --soft:#ec4899; --practice:#10b981; --accent:#6366f1;
-    --ring-track:#eceefb; --chip:#eef0fb;
+    --border:#e7e9f4; --shadow:0 4px 18px rgba(30,34,80,.06); --shadow-lg:0 14px 44px rgba(30,34,80,.14);
+    --hard:#6366f1; --soft:#ec4899; --practice:#10b981;
+    --accent:#6366f1; --warn:#f59e0b; --ok:#10b981;
+    --ring-track:#eceefb; --chip:#eef0fb; --field:#f4f5fb;
+    --safe-b:env(safe-area-inset-bottom,0px);
+    --safe-t:env(safe-area-inset-top,0px);
+    --nav-h:60px; --r:14px;
   }
   [data-theme="dark"]{
     --bg:#0d0e1a; --surface:#171827; --surface-2:#1e2033; --text:#eef0fb; --muted:#9aa0c0;
-    --border:#262a44; --shadow:0 6px 24px rgba(0,0,0,.4); --shadow-lg:0 14px 44px rgba(0,0,0,.55);
-    --ring-track:#24273d; --chip:#23263b;
+    --border:#262a44; --shadow:0 4px 18px rgba(0,0,0,.36); --shadow-lg:0 14px 44px rgba(0,0,0,.55);
+    --ring-track:#24273d; --chip:#23263b; --field:#12131f;
   }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{-webkit-text-size-adjust:100%}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
-    background:var(--bg); color:var(--text); line-height:1.6;
+    background:var(--bg); color:var(--text); line-height:1.6; overflow-x:hidden;
     -webkit-font-smoothing:antialiased; transition:background .3s,color .3s;
+    min-height:100vh; min-height:100dvh;
   }
-  .wrap{max-width:1080px;margin:0 auto;padding:0 18px 80px}
-
-  /* Header */
-  header.hero{
-    position:relative; overflow:hidden; color:#fff;
-    background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 45%,#ec4899 100%);
-    padding:34px 0 96px; margin-bottom:-64px;
-  }
-  header.hero::after{
-    content:""; position:absolute; inset:0;
-    background:radial-gradient(900px 320px at 18% -10%,rgba(255,255,255,.28),transparent 60%);
-  }
-  .hero-inner{position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:0 18px;display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-  .hero h1{font-size:26px;font-weight:800;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
-  .hero p{opacity:.92;font-size:13.5px;margin-top:6px;max-width:520px}
-  .hero-actions{display:flex;gap:8px;flex-wrap:wrap}
-  .icon-btn{
-    background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.32);color:#fff;
-    width:38px;height:38px;border-radius:11px;cursor:pointer;font-size:16px;display:grid;place-items:center;
-    transition:.2s; backdrop-filter:blur(6px);
-  }
-  .icon-btn:hover{background:rgba(255,255,255,.32);transform:translateY(-1px)}
-
-  /* Overall ring card */
-  .ring-card{
-    position:relative;z-index:3;background:var(--surface);border-radius:20px;box-shadow:var(--shadow-lg);
-    padding:18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;border:1px solid var(--border);
-  }
-  .ring{width:96px;height:96px;flex:0 0 auto;position:relative}
-  .ring svg{transform:rotate(-90deg)}
-  .ring .pct{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:20px}
-  .ring-meta{flex:1;min-width:200px}
-  .ring-meta h2{font-size:16px;margin-bottom:8px}
-  .stat-row{display:flex;gap:18px;flex-wrap:wrap}
-  .stat{display:flex;flex-direction:column}
-  .stat b{font-size:20px;line-height:1.2}
-  .stat span{font-size:11.5px;color:var(--muted)}
-
-  /* Nav */
-  nav.tabs{position:sticky;top:0;z-index:20;display:flex;gap:6px;margin:22px 0 18px;padding:6px;
-    background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow-x:auto}
-  nav.tabs button{
-    flex:1;min-width:max-content;border:0;background:transparent;color:var(--muted);font-size:14px;font-weight:600;
-    padding:10px 16px;border-radius:10px;cursor:pointer;transition:.2s;white-space:nowrap;display:flex;align-items:center;gap:7px;justify-content:center
-  }
-  nav.tabs button:hover{color:var(--text);background:var(--surface-2)}
-  nav.tabs button.active{color:#fff;background:var(--accent)}
-  nav.tabs button .dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.5}
-
-  /* Toolbar */
-  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
-  .search{flex:1;min-width:200px;position:relative}
-  .search input{width:100%;padding:11px 14px 11px 38px;border-radius:12px;border:1px solid var(--border);
-    background:var(--surface);color:var(--text);font-size:14px;outline:none;transition:.2s}
-  .search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.14)}
-  .search .ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.5}
-  .chips{display:flex;gap:6px}
-  .chip{padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);
-    color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
-  .chip:hover{color:var(--text)}
-  .chip.active{background:var(--chip);color:var(--accent);border-color:transparent}
-
-  /* Pillar intro */
-  .pillar-head{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
-  .pillar-emoji{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;font-size:26px;color:#fff;flex:0 0 auto}
-  .pillar-head h2{font-size:20px}
-  .pillar-head p{font-size:13px;color:var(--muted)}
-  .pillar-prog{margin-left:auto;text-align:right;min-width:140px}
-  .bar{height:9px;border-radius:6px;background:var(--ring-track);overflow:hidden;margin-top:6px}
-  .bar > i{display:block;height:100%;border-radius:6px;transition:width .5s cubic-bezier(.4,0,.2,1)}
-
-  /* Group + cards */
-  .group{margin-bottom:26px}
-  .group-title{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;margin-bottom:12px}
-  .group-title .g-ic{font-size:18px}
-  .group-title .count{font-size:11.5px;font-weight:600;color:var(--muted);background:var(--chip);padding:2px 9px;border-radius:20px}
-  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
-  .card{
-    position:relative;background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:14px 15px;
-    cursor:pointer;transition:.18s;display:flex;gap:12px;align-items:flex-start;box-shadow:var(--shadow)
-  }
-  .card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:var(--accent-soft,var(--border))}
-  .card.done{background:var(--surface-2)}
-  .card.done .c-title{text-decoration:line-through;opacity:.62}
-  .check{width:23px;height:23px;border-radius:8px;border:2px solid var(--border);flex:0 0 auto;margin-top:1px;
-    display:grid;place-items:center;transition:.2s;color:#fff;font-size:13px}
-  .card.done .check{background:var(--pc,var(--accent));border-color:var(--pc,var(--accent))}
-  .c-body{flex:1;min-width:0}
-  .c-title{font-size:14.5px;font-weight:650;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-  .c-desc{font-size:12.5px;color:var(--muted);margin-top:3px}
-  .c-foot{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
-  .tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--chip);color:var(--accent)}
-  .when{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px}
-  .done-date{font-size:11px;color:var(--pc,var(--accent));font-weight:600;display:flex;align-items:center;gap:4px}
-  .note-btn{margin-left:auto;border:0;background:transparent;cursor:pointer;font-size:14px;opacity:.45;transition:.2s;padding:2px 4px;border-radius:6px}
-  .note-btn:hover{opacity:1;background:var(--chip)}
-  .note-btn.has{opacity:1}
-  .note-box{margin-top:9px}
-  .note-box textarea{width:100%;min-height:56px;border-radius:10px;border:1px solid var(--border);background:var(--bg);
-    color:var(--text);padding:8px 10px;font-size:12.5px;font-family:inherit;resize:vertical;outline:none}
-  .note-box textarea:focus{border-color:var(--accent)}
-
-  /* Dashboard */
-  .pillars-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:24px}
-  .pillar-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;cursor:pointer;
-    transition:.2s;box-shadow:var(--shadow);position:relative;overflow:hidden}
-  .pillar-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
-  .pillar-card .pc-emoji{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font-size:23px;color:#fff;margin-bottom:12px}
-  .pillar-card h3{font-size:17px;margin-bottom:2px}
-  .pillar-card .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px}
-  .pillar-card .pc-stat{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:5px}
-  .pillar-card .pc-stat b{color:var(--text);font-size:13px}
-  .glow{position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;opacity:.13;filter:blur(6px)}
-
-  .panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:var(--shadow);margin-bottom:18px}
-  .panel h3{font-size:15px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-  .next-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border)}
-  .next-item .ni-emoji{font-size:22px}
-  .next-item b{font-size:14px}
-  .next-item span{font-size:12px;color:var(--muted)}
-  .go-btn{margin-left:auto;background:var(--accent);color:#fff;border:0;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;white-space:nowrap}
-  .go-btn:hover{filter:brightness(1.08)}
-  .recent{display:flex;flex-direction:column;gap:8px}
-  .recent-row{display:flex;align-items:center;gap:10px;font-size:13px;padding:8px 10px;border-radius:10px;background:var(--surface-2)}
-  .recent-row .rk{color:var(--muted);font-size:11.5px;margin-left:auto;white-space:nowrap}
-  .empty{color:var(--muted);font-size:13px;text-align:center;padding:18px}
-  .tips{font-size:12.5px;color:var(--muted);line-height:1.9}
-  .tips b{color:var(--text)}
-  .sync-row{display:flex;gap:8px;margin-bottom:10px}
-  .sync-row input{flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;outline:none}
-  .sync-row input:focus{border-color:var(--accent)}
-  .sync-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-  .sync-status{font-size:12.5px;color:var(--muted);margin-bottom:8px}
-  .goal-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:var(--surface-2);margin-bottom:7px}
-  .goal-row .g-text{flex:1;font-size:13.5px}
-  .goal-row.done .g-text{text-decoration:line-through;opacity:.6}
-  .goal-row .check{cursor:pointer}
-  .goal-row.done .check{background:#10b981;border-color:#10b981}
-  .banner{display:flex;align-items:center;gap:10px;background:#f59e0b;color:#fff;border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:600;margin-bottom:14px;flex-wrap:wrap}
-  .banner .go-btn{margin-left:auto;background:rgba(255,255,255,.22)}
-
-  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:30px;line-height:1.8}
-
-  /* Toast */
-  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);
-    padding:11px 20px;border-radius:12px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.3s;z-index:99;box-shadow:var(--shadow-lg)}
-  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
+  button{font-family:inherit;cursor:pointer}
+  input,textarea{font-family:inherit}
   .hidden{display:none !important}
-  @media(max-width:560px){
-    .hero h1{font-size:21px}.hero p{font-size:12.5px}
-    .pillar-prog{margin-left:0;text-align:left;width:100%}
-    .ring-card{padding:16px}
+
+  /* ============ 布局骨架 ============ */
+  .shell{display:block}
+  .main{padding:0 16px calc(var(--nav-h) + var(--safe-b) + 28px);max-width:820px;margin:0 auto}
+  .rail{display:none}
+  .bottomnav{display:flex}
+
+  @media(min-width:1024px){
+    .shell{display:grid;grid-template-columns:252px minmax(0,1fr);gap:32px;
+      max-width:1186px;margin:0 auto;padding:0 28px;align-items:start}
+    .rail{display:flex;position:sticky;top:0;height:100vh;height:100dvh;flex-direction:column;gap:18px;
+      padding:26px 0 22px}
+    .main{max-width:860px;margin:0;padding:26px 0 64px}
+    .bottomnav{display:none}
+    .appbar{display:none !important}
   }
+
+  /* ============ 顶栏（手机 / 平板） ============ */
+  .appbar{
+    position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;
+    margin:0 -16px;padding:calc(var(--safe-t) + 10px) 16px 10px;
+    background:var(--bg);
+    background:color-mix(in srgb,var(--bg) 86%,transparent);
+    backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);
+    border-bottom:1px solid transparent;transition:border-color .2s;
+  }
+  .appbar.stuck{border-bottom-color:var(--border)}
+  .ab-title{font-size:18px;font-weight:800;letter-spacing:.2px;display:flex;align-items:center;gap:7px}
+  .ab-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+
+  .icon-btn{
+    width:40px;height:40px;border-radius:12px;border:1px solid var(--border);background:var(--surface);
+    color:var(--text);font-size:16px;display:grid;place-items:center;transition:.18s;flex:0 0 auto;
+  }
+  .icon-btn:active{transform:scale(.94)}
+  @media(hover:hover){.icon-btn:hover{border-color:var(--accent);color:var(--accent)}}
+
+  .timer-pill{
+    display:flex;align-items:center;gap:7px;height:40px;padding:0 14px;border-radius:12px;border:0;
+    background:linear-gradient(135deg,#6366f1,#ec4899);color:#fff;font-weight:700;font-size:14px;
+    font-variant-numeric:tabular-nums;box-shadow:0 4px 14px rgba(99,102,241,.34);
+  }
+  .timer-pill .tp-dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+  /* ============ 侧边栏（iPad 横屏 / 桌面） ============ */
+  .brand{display:flex;gap:11px;align-items:center;padding:0 6px}
+  .brand .b-mark{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;
+    background:linear-gradient(135deg,#6366f1,#ec4899);color:#fff;flex:0 0 auto}
+  .brand h1{font-size:15.5px;font-weight:800;line-height:1.25}
+  .brand p{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .rail-nav{display:flex;flex-direction:column;gap:4px}
+  .rail-nav button{
+    display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border:0;border-radius:12px;
+    background:transparent;color:var(--muted);font-size:14px;font-weight:650;text-align:left;transition:.16s;
+  }
+  .rail-nav button .rn-ic{font-size:17px;width:22px;text-align:center;flex:0 0 auto}
+  .rail-nav button .rn-badge{margin-left:auto;font-size:11px;font-weight:700;padding:1px 8px;border-radius:20px;
+    background:var(--chip);color:var(--muted)}
+  .rail-nav button.on{background:var(--accent);color:#fff}
+  .rail-nav button.on .rn-badge{background:rgba(255,255,255,.24);color:#fff}
+  @media(hover:hover){.rail-nav button:not(.on):hover{background:var(--surface);color:var(--text)}}
+  .rail-bottom{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+  .rail-bottom .timer-pill{width:100%;justify-content:center}
+  .rail-link{display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border:0;
+    border-radius:12px;background:transparent;color:var(--muted);font-size:14px;font-weight:650;
+    text-align:left;transition:.16s}
+  .rail-link .rn-ic{font-size:17px;width:22px;text-align:center;flex:0 0 auto}
+  @media(hover:hover){.rail-link:hover{background:var(--surface);color:var(--text)}}
+  .rail-foot{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    padding:15px;box-shadow:var(--shadow)}
+  .rail-foot .rf-top{display:flex;align-items:center;gap:13px;margin-bottom:12px}
+  .ring{position:relative}
+  .ring .pct{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:15px}
+
+  /* ============ 底部导航（手机 / iPad 竖屏） ============ */
+  .bottomnav{
+    position:fixed;left:0;right:0;bottom:0;z-index:40;align-items:stretch;
+    padding:6px 6px calc(var(--safe-b) + 6px);
+    background:var(--surface);
+    background:color-mix(in srgb,var(--surface) 92%,transparent);
+    backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);
+    border-top:1px solid var(--border);
+  }
+  .bottomnav button{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    border:0;background:transparent;color:var(--muted);font-size:10.5px;font-weight:650;
+    padding:8px 2px;border-radius:13px;min-height:50px;position:relative;transition:.16s;
+  }
+  .bottomnav button .bn-ic{font-size:20px;line-height:1;transition:transform .18s}
+  .bottomnav button.on{color:var(--accent)}
+  .bottomnav button.on .bn-ic{transform:translateY(-1px) scale(1.08)}
+  .bottomnav button .bn-dot{position:absolute;top:6px;left:calc(50% + 4px);min-width:16px;height:16px;
+    border-radius:9px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;
+    display:grid;place-items:center;padding:0 4px}
+
+  /* ============ 通用 ============ */
+  .sect-h{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:750;margin:22px 2px 10px}
+  .sect-h .sh-sub{font-size:11.5px;font-weight:600;color:var(--muted);margin-left:auto;text-align:right}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px;
+    box-shadow:var(--shadow)}
+  .panel + .panel{margin-top:12px}
+
+  /* ============ 今日承诺 ============ */
+  .promise{border-radius:20px;padding:18px;color:#fff;position:relative;overflow:hidden;
+    background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 52%,#ec4899 100%);box-shadow:var(--shadow-lg)}
+  .promise.done{background:linear-gradient(135deg,#059669 0%,#10b981 60%,#34d399 100%)}
+  .promise::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(600px 200px at 12% -20%,rgba(255,255,255,.3),transparent 62%)}
+  .promise > *{position:relative;z-index:2}
+  .p-top{display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:700;opacity:.95;letter-spacing:.4px}
+  .p-big{font-size:27px;font-weight:850;margin:9px 0 3px;line-height:1.2;letter-spacing:-.4px}
+  .p-sub{font-size:13px;opacity:.93}
+  .p-bar{height:8px;border-radius:6px;background:rgba(255,255,255,.28);margin:14px 0 6px;overflow:hidden}
+  .p-bar > i{display:block;height:100%;border-radius:6px;background:#fff;transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .p-actions{display:flex;gap:9px;margin-top:15px;flex-wrap:wrap}
+  .p-actions .btn{flex:1;min-width:120px}
+
+  .btn{border:0;border-radius:13px;padding:13px 18px;font-size:14.5px;font-weight:700;
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:.18s;min-height:46px}
+  .btn:active{transform:scale(.975)}
+  .btn-white{background:#fff;color:#4f46e5}
+  .btn-ghost-w{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.38)}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-soft{background:var(--chip);color:var(--accent)}
+  .btn-line{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+  .btn-block{width:100%}
+  .btn-sm{padding:9px 14px;font-size:13px;min-height:40px;border-radius:11px}
+
+  /* ============ 焦点卡 ============ */
+  .focus{background:var(--surface);border:1px solid var(--border);border-radius:20px;
+    box-shadow:var(--shadow);overflow:hidden}
+  .focus-accent{height:4px}
+  .focus-in{padding:17px}
+  .f-crumb{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:650;color:var(--muted);
+    margin-bottom:9px;flex-wrap:wrap}
+  .f-crumb .tag{padding:2px 9px;border-radius:20px;font-weight:700}
+  .f-title{font-size:19.5px;font-weight:800;line-height:1.3;letter-spacing:-.2px;margin-bottom:5px}
+  .f-desc{font-size:13px;color:var(--muted);margin-bottom:14px}
+  .action-box{background:var(--surface-2);border:1px dashed var(--border);border-radius:15px;padding:14px}
+  .ab-label{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.6px;margin-bottom:6px;
+    display:flex;align-items:center;gap:6px}
+  .ab-text{font-size:15px;font-weight:650;line-height:1.55}
+  .kpi-row{display:flex;gap:8px;align-items:flex-start;margin-top:11px;padding-top:11px;border-top:1px solid var(--border)}
+  .kpi-row .k-ic{font-size:14px;flex:0 0 auto;margin-top:1px}
+  .kpi-row .k-tx{font-size:12.5px;color:var(--muted);line-height:1.55}
+  .kpi-row .k-tx b{color:var(--text);font-weight:700}
+  .f-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .meta-pill{font-size:12px;font-weight:650;padding:5px 11px;border-radius:20px;background:var(--chip);
+    color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+  .f-actions{display:flex;gap:9px;flex-wrap:wrap}
+  .f-actions .btn{flex:1 1 0;min-width:0}
+  .f-actions .btn-wide{flex:1 0 100%}
+
+  /* ============ 进度条 / 统计 ============ */
+  .bar{height:9px;border-radius:6px;background:var(--ring-track);overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:6px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .bar.sm{height:6px}
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}
+  @media(min-width:640px){.stats{grid-template-columns:repeat(4,1fr)}}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+  .stat b{display:block;font-size:23px;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
+  .stat span{font-size:11.5px;color:var(--muted);font-weight:600}
+  .stat .s-ic{font-size:14px;margin-bottom:5px;display:block}
+
+  /* ============ 列表行 ============ */
+  .row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:13px;background:var(--surface-2);
+    margin-bottom:8px;min-height:52px}
+  .row:last-child{margin-bottom:0}
+  .row .r-tx{flex:1;font-size:14px;font-weight:600;min-width:0;cursor:pointer}
+  .row .r-sub{font-size:11.5px;color:var(--muted);font-weight:500;margin-top:1px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .row.done .r-tx{opacity:.55}
+  .row.done .r-t{text-decoration:line-through}
+  .r-t{display:block}
+  .row-x{border:0;background:transparent;color:var(--muted);font-size:15px;padding:8px 10px;border-radius:9px;
+    opacity:.6;flex:0 0 auto;min-height:40px;min-width:40px}
+  .row-x:active{background:var(--chip);opacity:1}
+
+  .checkbox{width:26px;height:26px;border-radius:9px;border:2px solid var(--border);flex:0 0 auto;
+    display:grid;place-items:center;color:#fff;font-size:14px;font-weight:800;transition:.18s;background:transparent}
+  .checkbox.on{background:var(--pc,var(--accent));border-color:var(--pc,var(--accent))}
+  .checkbox.st1{background:var(--warn);border-color:var(--warn)}
+
+  /* ============ 知识地图 ============ */
+  .pillars{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:600px){.pillars{grid-template-columns:repeat(3,1fr)}}
+  .pcard{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:17px;
+    box-shadow:var(--shadow);position:relative;overflow:hidden;text-align:left;width:100%;transition:.18s}
+  .pcard:active{transform:scale(.985)}
+  @media(hover:hover){.pcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px)}}
+  .pcard .glow{position:absolute;right:-34px;top:-34px;width:112px;height:112px;border-radius:50%;
+    opacity:.13;filter:blur(7px)}
+  .pcard .pc-ic{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:22px;
+    color:#fff;margin-bottom:11px;position:relative}
+  .pcard h3{font-size:15.5px;font-weight:750;position:relative}
+  .pcard .pc-sub{font-size:12px;color:var(--muted);margin-bottom:12px;position:relative}
+  .pcard .pc-line{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);
+    margin-bottom:6px;position:relative}
+  .pcard .pc-line b{color:var(--text);font-variant-numeric:tabular-nums}
+
+  .filterbar{display:flex;gap:8px;align-items:center;margin:16px 0 14px;flex-wrap:wrap}
+  .search{flex:1;min-width:170px;position:relative}
+  .search input{width:100%;padding:12px 14px 12px 40px;border-radius:13px;border:1px solid var(--border);
+    background:var(--surface);color:var(--text);font-size:15px;outline:none;transition:.18s;min-height:46px}
+  .search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.14)}
+  .search .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);opacity:.5;font-size:14px}
+  .seg{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:13px;
+    padding:4px;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .seg::-webkit-scrollbar{display:none}
+  .seg button{border:0;background:transparent;color:var(--muted);font-size:12.5px;font-weight:700;
+    padding:9px 13px;border-radius:10px;transition:.16s;white-space:nowrap;min-height:38px;flex:0 0 auto}
+  .seg button.on{background:var(--accent);color:#fff}
+
+  .group{margin-bottom:22px}
+  .group-h{display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:750;margin-bottom:11px}
+  .group-h .count{font-size:11.5px;font-weight:700;color:var(--muted);background:var(--chip);
+    padding:2px 9px;border-radius:20px;margin-left:auto}
+
+  .cards{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:600px){.cards{grid-template-columns:repeat(2,1fr)}}
+  .card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:15px;
+    padding:13px 13px 13px 15px;display:flex;gap:11px;align-items:flex-start;box-shadow:var(--shadow);
+    transition:.18s;text-align:left;width:100%;cursor:pointer}
+  .card:active{transform:scale(.985)}
+  @media(hover:hover){.card:hover{border-color:var(--pc,var(--accent));transform:translateY(-1px)}}
+  .card::before{content:"";position:absolute;left:0;top:13px;bottom:13px;width:3px;border-radius:0 3px 3px 0;
+    background:var(--pc,var(--accent));opacity:.85}
+  .card.st1::before{background:var(--warn)}
+  .card.st2{background:var(--surface-2)}
+  .c-body{flex:1;min-width:0}
+  .c-title{font-size:14.5px;font-weight:700;line-height:1.4}
+  .card.st2 .c-title{color:var(--muted)}
+  .c-act{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.5;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .c-foot{display:flex;align-items:center;gap:7px;margin-top:8px;flex-wrap:wrap}
+  .pill{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--chip);color:var(--muted)}
+  .pill.st1{background:rgba(245,158,11,.16);color:#b45309}
+  .pill.st2{background:rgba(16,185,129,.16);color:#047857}
+  [data-theme="dark"] .pill.st1{color:#fbbf24}
+  [data-theme="dark"] .pill.st2{color:#34d399}
+
+  /* ============ 抽屉 ============ */
+  .sheet-wrap{position:fixed;inset:0;z-index:60;display:none}
+  .sheet-wrap.open{display:block}
+  .sheet-bg{position:absolute;inset:0;background:rgba(12,14,30,.5);
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;transition:opacity .22s}
+  .sheet-wrap.in .sheet-bg{opacity:1}
+  .sheet{
+    position:absolute;left:0;right:0;bottom:0;max-height:92vh;max-height:92dvh;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;background:var(--surface);border-radius:22px 22px 0 0;
+    padding:8px 18px calc(var(--safe-b) + 24px);
+    transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);box-shadow:var(--shadow-lg);
+  }
+  .sheet-wrap.in .sheet{transform:translateY(0)}
+  @media(min-width:768px){
+    .sheet{left:50%;right:auto;bottom:auto;top:50%;width:620px;max-width:calc(100vw - 48px);
+      max-height:84vh;max-height:84dvh;border-radius:20px;transform:translate(-50%,-46%) scale(.97);opacity:0;
+      padding-bottom:22px;transition:transform .22s,opacity .22s}
+    .sheet-wrap.in .sheet{transform:translate(-50%,-50%) scale(1);opacity:1}
+  }
+  .grabber{width:38px;height:4px;border-radius:3px;background:var(--border);margin:6px auto 14px}
+  @media(min-width:768px){.grabber{display:none}}
+  .sheet-h{display:flex;align-items:flex-start;gap:11px;margin-bottom:15px}
+  .sheet-h .sh-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:20px;
+    color:#fff;flex:0 0 auto}
+  .sheet-h h2{font-size:18px;font-weight:800;line-height:1.3}
+  .sheet-h .sh-crumb{font-size:11.5px;color:var(--muted);margin-top:3px;font-weight:600}
+  .close-x{margin-left:auto;border:0;background:var(--chip);color:var(--muted);width:36px;height:36px;
+    border-radius:11px;font-size:15px;display:grid;place-items:center;flex:0 0 auto}
+
+  .stage-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:15px}
+  .stage-btn{border:1.5px solid var(--border);background:var(--surface);border-radius:13px;padding:11px 6px;
+    font-size:12.5px;font-weight:700;color:var(--muted);transition:.18s;min-height:58px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+  .stage-btn .sb-ic{font-size:16px}
+  .stage-btn.on{color:#fff}
+  .stage-btn.on[data-st="0"]{background:var(--muted);border-color:var(--muted)}
+  .stage-btn.on[data-st="1"]{background:var(--warn);border-color:var(--warn)}
+  .stage-btn.on[data-st="2"]{background:var(--ok);border-color:var(--ok)}
+
+  .field{width:100%;padding:12px 13px;border-radius:12px;border:1px solid var(--border);background:var(--field);
+    color:var(--text);font-size:15px;outline:none;transition:.18s;min-height:46px}
+  .field:focus{border-color:var(--accent)}
+  textarea.field{min-height:92px;resize:vertical;line-height:1.6}
+  .link-row{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px}
+  .link-row .btn{flex:1;min-width:128px}
+
+  .timer-card{background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:15px;text-align:center}
+  .timer-disp{font-size:38px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-1px;
+    line-height:1.1;margin-bottom:3px}
+  .timer-hint{font-size:12px;color:var(--muted);margin-bottom:13px}
+  .timer-opts{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
+  .timer-opts button{border:1px solid var(--border);background:var(--surface);color:var(--muted);
+    border-radius:10px;padding:9px 15px;font-size:13px;font-weight:700;min-height:42px}
+  .timer-opts button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  /* ============ 空态 / 提示 ============ */
+  .empty{color:var(--muted);font-size:13.5px;text-align:center;padding:26px 16px;line-height:1.7}
+  .empty .e-ic{font-size:30px;display:block;margin-bottom:9px;opacity:.55}
+  .banner{display:flex;align-items:center;gap:11px;background:linear-gradient(135deg,#f59e0b,#f97316);
+    color:#fff;border-radius:15px;padding:13px 15px;font-size:13.5px;font-weight:650;margin-bottom:14px;
+    flex-wrap:wrap;box-shadow:var(--shadow)}
+  .banner .btn{margin-left:auto;background:rgba(255,255,255,.24);color:#fff;border:1px solid rgba(255,255,255,.36)}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.85}
+  .note b{color:var(--text)}
+
+  details.acc{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    box-shadow:var(--shadow);overflow:hidden}
+  details.acc > summary{padding:15px 16px;font-size:14px;font-weight:700;cursor:pointer;list-style:none;
+    display:flex;align-items:center;gap:9px;min-height:52px}
+  details.acc > summary::-webkit-details-marker{display:none}
+  details.acc > summary::after{content:"›";margin-left:auto;font-size:20px;color:var(--muted);
+    transform:rotate(90deg);transition:.2s}
+  details.acc[open] > summary::after{transform:rotate(-90deg)}
+  details.acc .acc-body{padding:14px 16px 16px;border-top:1px solid var(--border)}
+
+  .radios{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:4px}
+  .radios button{border:1px solid var(--border);background:var(--surface-2);color:var(--muted);
+    border-radius:10px;padding:9px 15px;font-size:13px;font-weight:700;min-height:42px}
+  .radios button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  .toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + var(--safe-b) + 18px);z-index:99;
+    transform:translateX(-50%) translateY(16px);background:var(--text);color:var(--bg);
+    padding:12px 20px;border-radius:13px;font-size:13.5px;font-weight:650;opacity:0;pointer-events:none;
+    transition:.28s;box-shadow:var(--shadow-lg);max-width:calc(100vw - 32px);text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(min-width:1024px){.toast{bottom:28px}}
+
+  footer.foot{text-align:center;color:var(--muted);font-size:11.5px;margin-top:28px;line-height:1.9;padding:0 8px}
+
+  @media(prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
 </style>
 </head>
 <body>
-<header class="hero">
-  <div class="hero-inner">
-    <div>
-      <h1>🤖 AI 产品经理知识体系</h1>
-      <p>硬实力 × 软实力 × 社会化实践 —— 一张可打卡、可追踪的成长地图。</p>
-    </div>
-    <div class="hero-actions">
-      <button class="icon-btn" id="themeBtn" title="切换深浅色">🌙</button>
-      <button class="icon-btn" id="exportBtn" title="导出进度">⬇️</button>
-      <button class="icon-btn" id="importBtn" title="导入进度">⬆️</button>
-      <button class="icon-btn" id="resetBtn" title="重置全部">🗑️</button>
-    </div>
-  </div>
-</header>
 
-<div class="wrap">
-  <div class="ring-card">
-    <div class="ring">
-      <svg width="96" height="96">
-        <circle cx="48" cy="48" r="42" fill="none" stroke="var(--ring-track)" stroke-width="9"/>
-        <circle id="ringFill" cx="48" cy="48" r="42" fill="none" stroke="url(#grad)" stroke-width="9"
-                stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9" style="transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)"/>
-        <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#ec4899"/>
-        </linearGradient></defs>
-      </svg>
-      <div class="pct" id="ringPct">0%</div>
-    </div>
-    <div class="ring-meta">
-      <h2>总体学习进度</h2>
-      <div class="stat-row">
-        <div class="stat"><b id="statDone">0</b><span>已掌握</span></div>
-        <div class="stat"><b id="statTotal">0</b><span>知识项</span></div>
-        <div class="stat"><b id="statWeek">0</b><span>近 7 天打卡</span></div>
-        <div class="stat"><b id="statStreak">0</b><span>累计天数</span></div>
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <div class="b-mark">🤖</div>
+      <div style="flex:1;min-width:0">
+        <h1>AI 产品经理知识体系</h1>
+        <p>今天做什么，而不是学到哪了</p>
       </div>
     </div>
+    <nav class="rail-nav" id="railNav"></nav>
+    <div class="rail-bottom">
+      <button class="rail-link theme-btn" onclick="toggleTheme()">
+        <span class="rn-ic">🌙</span><span>深浅色</span></button>
+      <button class="timer-pill hidden" onclick="openTimerSheet()"></button>
+    <div class="rail-foot">
+      <div class="rf-top">
+        <div class="ring" style="width:64px;height:64px;flex:0 0 auto">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ring-track)" stroke-width="7"/>
+            <circle id="ringFill" cx="32" cy="32" r="27" fill="none" stroke="url(#rgrad)" stroke-width="7"
+              stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="169.6"
+              style="transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)"/>
+            <defs><linearGradient id="rgrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#ec4899"/>
+            </linearGradient></defs>
+          </svg>
+          <div class="pct" id="ringPct">0%</div>
+        </div>
+        <div>
+          <div style="font-size:12.5px;font-weight:700">体系掌握度</div>
+          <div style="font-size:11.5px;color:var(--muted)" id="ringSub">0 / 63 项已掌握</div>
+        </div>
+      </div>
+      <div class="bar sm"><i id="ringBar" style="width:0%;background:linear-gradient(90deg,#6366f1,#ec4899)"></i></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:9px;line-height:1.7">
+        这是长期刻度，慢是正常的。<br/>看「今天」就够了。
+      </div>
+    </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="appbar" id="appbar">
+      <div class="ab-title" id="abTitle">今天</div>
+      <div class="ab-actions">
+        <button class="timer-pill hidden" id="timerPillTop" onclick="openTimerSheet()"></button>
+        <button class="icon-btn theme-btn" id="themeBtn" title="切换深浅色">🌙</button>
+      </div>
+    </header>
+    <div id="view"></div>
+    <footer class="foot">
+      把 63 个知识点拆成「今天就能做完的一步」· 数据保存在本设备浏览器<br/>
+      AI 产品经理知识体系 · 持续迭代中
+    </footer>
   </div>
+</div>
 
-  <nav class="tabs" id="tabs">
-    <button data-tab="dashboard" class="active">📊 总览</button>
-    <button data-tab="hard">🧠 硬实力</button>
-    <button data-tab="soft">💬 软实力</button>
-    <button data-tab="practice">🌐 实践行动</button>
-    <button data-tab="sprint">🎯 冲刺</button>
-  </nav>
+<nav class="bottomnav" id="bottomNav"></nav>
 
-  <div id="view"></div>
-
-  <footer>
-    进度自动保存在本设备浏览器（localStorage）。跨设备同步请用右上角 ⬇️ 导出 / ⬆️ 导入。<br/>
-    AI 产品经理成长地图 · 持续迭代中
-  </footer>
+<div class="sheet-wrap" id="sheetWrap">
+  <div class="sheet-bg" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet"></div>
 </div>
 
 <div class="toast" id="toast"></div>
 <input type="file" id="fileInput" accept="application/json" class="hidden" />
 
 <script>
-/* ============ 数据 ============ */
+/* =====================================================================
+   数据层：每个知识点都带「第一步动作 / 验收标准 / 搜索词 / 权威入口」
+   —— 这是 v2 的核心：把「学科名」翻译成「今天能做完的一步」
+   ===================================================================== */
 const PILLARS = [
   {
     id:"hard", name:"硬实力", sub:"专业技术能力", icon:"🧠", color:"#6366f1",
     groups:[
       {name:"AI / 机器学习基础", icon:"📐", items:[
-        {t:"机器学习核心概念", d:"监督/无监督/强化学习、过拟合、损失函数、准确率/召回/F1 等评估指标"},
-        {t:"深度学习与神经网络", d:"CNN / RNN / Transformer、注意力机制、预训练范式"},
-        {t:"自然语言处理 NLP", d:"分词、词向量、语义理解、文本生成与摘要"},
-        {t:"计算机视觉与多模态", d:"图像分类/检测/分割，图文语音视频跨模态理解"},
+        {t:"机器学习核心概念", d:"监督/无监督/强化学习、过拟合、损失函数、评估指标",
+         a:"用 scikit-learn 跑通鸢尾花分类，手动改一次参数，观察准确率变化",
+         k:"能解释什么是过拟合，以及为什么有时用 F1 而不是准确率", q:"sklearn 鸢尾花分类 入门教程",
+         s:"scikit-learn 官方 Tutorial", m:45},
+        {t:"深度学习与神经网络", d:"CNN / RNN / Transformer、注意力机制、预训练范式",
+         a:"照着 Keras 官网示例，搭一个识别手写数字的神经网络并跑通训练",
+         k:"能画出 CNN、RNN、Transformer 三种结构的核心差异", q:"Keras MNIST 入门 示例",
+         s:"Keras 官网 Quickstart", m:60},
+        {t:"自然语言处理 NLP", d:"分词、词向量、语义理解、文本生成与摘要",
+         a:"用 jieba 对一段中文评论分词，找出出现最多的 20 个词",
+         k:"能说清分词、词向量、语义理解各自解决什么问题", q:"jieba 分词 词向量 入门",
+         s:"Hugging Face NLP Course 第 1 章", m:45},
+        {t:"计算机视觉与多模态", d:"图像分类/检测/分割，图文语音跨模态理解",
+         a:"找一个 CLIP 在线 Demo，用一句话把图片搜出来",
+         k:"能举例说明图像、文本、语音如何映射到同一个向量空间", q:"CLIP 以文搜图 demo 在线",
+         s:"OpenAI CLIP 仓库 / HuggingFace Spaces", m:45},
       ]},
       {name:"大模型与生成式 AI（核心）", icon:"🚀", items:[
-        {t:"LLM 原理与能力边界", d:"Token 机制、上下文窗口、涌现能力、幻觉成因与规避"},
-        {t:"Prompt Engineering", d:"提示词设计、Few-shot、思维链 CoT、结构化输出"},
-        {t:"RAG 检索增强生成", d:"Embedding、向量数据库、知识库构建、召回与重排"},
-        {t:"Agent 智能体", d:"Function Calling、ReAct、多 Agent 协作、工作流编排"},
-        {t:"模型微调与训练", d:"SFT、LoRA、RLHF、数据集构建、训练成本评估"},
-        {t:"多模态生成", d:"文生图/视频、语音合成 TTS、跨模态应用落地"},
-        {t:"AI 评测体系", d:"Benchmark、效果评估、A/B、人工评测、安全对齐"},
+        {t:"LLM 原理与能力边界", d:"Token 机制、上下文窗口、涌现能力、幻觉成因与规避",
+         a:"读一遍图解 Transformer，用一张白纸手画出 Attention 的数据流",
+         k:"能解释幻觉是怎么产生的，并说出 2 种规避手段", q:"The Illustrated Transformer 中文 图解",
+         s:"Jay Alammar《The Illustrated Transformer》", m:60},
+        {t:"Prompt Engineering", d:"提示词设计、Few-shot、思维链 CoT、结构化输出",
+         a:"把同一个需求写成 3 版提示词（无示例 / 少样本 / 思维链），对比输出差异",
+         k:"能写出一份团队可复用的提示词模板", q:"提示词工程 思维链 少样本 对比",
+         s:"OpenAI Prompt Engineering Guide", m:45},
+        {t:"RAG 检索增强生成", d:"Embedding、向量数据库、知识库构建、召回与重排",
+         a:"用 LangChain 把一份自己的 PDF 做成能问答的最小 RAG（20 行代码）",
+         k:"能回答「切块大小为什么会影响召回效果」", q:"LangChain RAG 最小实现 PDF 教程",
+         s:"LangChain 官方 RAG Tutorial", m:90},
+        {t:"Agent 智能体", d:"Function Calling、ReAct、多 Agent 协作、工作流编排",
+         a:"写一个带 2 个工具的 Function Calling Demo：一个查天气，一个做计算",
+         k:"能画出 Agent 的 ReAct 循环，并说明什么时候会失控", q:"Function Calling 入门 demo 教程",
+         s:"OpenAI Function Calling 文档", m:90},
+        {t:"模型微调与训练", d:"SFT、LoRA、RLHF、数据集构建、训练成本评估",
+         a:"在免费 GPU 上用一个现成脚本，LoRA 微调一次小模型（如 Qwen 0.5B）",
+         k:"能估算一次微调需要的数据量、显存和钱", q:"LoRA 微调 Colab 教程 免费",
+         s:"Hugging Face PEFT 文档", m:120},
+        {t:"多模态生成", d:"文生图/视频、语音合成 TTS、跨模态应用落地",
+         a:"用同一个主体描述跑 5 组文生图提示词，记录提示词与出图的对应关系",
+         k:"能说清文生图、TTS、文生视频各自的可用性边界", q:"文生图 提示词 技巧 对比",
+         s:"Stable Diffusion / 即梦 官方文档", m:45},
+        {t:"AI 评测体系", d:"Benchmark、效果评估、A/B、人工评测、安全对齐",
+         a:"给你手头一个 AI 功能写一页评测方案：指标 + 样本 + 通过线",
+         k:"能设计一次人工评测或 A/B，并说明怎么判断显著", q:"大模型 评测方案 设计 指标",
+         s:"OpenAI Evals / 行业评测报告", m:60},
       ]},
       {name:"数据能力", icon:"📊", items:[
-        {t:"数据分析与 SQL", d:"取数、漏斗/留存分析、指标体系搭建"},
-        {t:"数据标注与治理", d:"标注规范、数据质量、数据闭环迭代"},
-        {t:"实验与因果推断", d:"A/B 实验设计、北极星指标、显著性判断"},
+        {t:"数据分析与 SQL", d:"取数、漏斗/留存分析、指标体系搭建",
+         a:"找一份公开数据，写出日活、次日留存、转化漏斗这 3 条 SQL",
+         k:"能为自己的 AI 功能搭出三层指标体系", q:"SQL 留存 漏斗 练习 数据集",
+         s:"牛客网 SQL 题库 / Mode SQL Tutorial", m:60},
+        {t:"数据标注与治理", d:"标注规范、数据质量、数据闭环迭代",
+         a:"写一页标注规范（含 5 条正例 5 条反例），找个人标 20 条试一次",
+         k:"能设计一致性校验和「bad case 回流」的闭环", q:"数据标注规范 模板 示例",
+         s:"Google / Scale AI 标注指南", m:60},
+        {t:"实验与因果推断", d:"A/B 实验设计、北极星指标、显著性判断",
+         a:"为一个按钮改版设计一次 A/B：假设、样本量、指标、判定线",
+         k:"能算样本量，并解释 p 值和显著性到底在说什么", q:"A/B 实验 样本量 计算 显著性",
+         s:"《Trustworthy Online Controlled Experiments》导读", m:60},
       ]},
       {name:"技术与工程基础", icon:"🔧", items:[
-        {t:"API 与系统集成", d:"RESTful、鉴权、限流、Webhook、SDK 对接"},
-        {t:"系统架构认知", d:"前后端、微服务、缓存、消息队列、可用性"},
-        {t:"模型部署与 MLOps", d:"推理服务、延迟与吞吐优化、成本、线上监控"},
-        {t:"安全合规与伦理", d:"数据隐私、内容安全、AI 伦理、生成式 AI 管理办法 / GDPR"},
+        {t:"API 与系统集成", d:"RESTful、鉴权、限流、Webhook、SDK 对接",
+         a:"用 Postman 调通一个大模型 API，把鉴权和超时重试都跑一遍",
+         k:"能画清楚一次请求的鉴权、限流、重试链路", q:"OpenAI API 鉴权 超时 重试 实践",
+         s:"OpenAI API Reference", m:45},
+        {t:"系统架构认知", d:"前后端、微服务、缓存、消息队列、可用性",
+         a:"给自己负责的产品画一张架构图，标出缓存和消息队列应该加在哪",
+         k:"能解释为什么这里要加缓存、那里要加队列", q:"系统架构 缓存 消息队列 入门",
+         s:"《System Design Primer》中文版", m:60},
+        {t:"模型部署与 MLOps", d:"推理服务、延迟与吞吐优化、成本、线上监控",
+         a:"用 FastAPI 把一个小模型包成一个接口，测一次 P95 延迟",
+         k:"能给出延迟、吞吐、成本三个方向的优化方案", q:"FastAPI 部署 大模型 推理 延迟",
+         s:"vLLM / FastAPI 官方文档", m:90},
+        {t:"安全合规与伦理", d:"数据隐私、内容安全、AI 伦理、生成式 AI 管理办法",
+         a:"对照《生成式人工智能服务管理暂行办法》，列一张合规检查表",
+         k:"能指出自己产品里的 3 个具体合规风险点", q:"生成式人工智能服务管理暂行办法 要点",
+         s:"网信办《生成式人工智能服务管理暂行办法》", m:60},
       ]},
       {name:"产品基本功", icon:"📋", items:[
-        {t:"需求分析与 PRD", d:"用户故事、需求优先级、PRD 结构化撰写"},
-        {t:"用户研究", d:"访谈、问卷、可用性测试、用户画像与旅程"},
-        {t:"原型与交互设计", d:"Figma / Axure、信息架构、交互流程"},
-        {t:"AI 产品交互范式", d:"人机协同、不确定性设计、可解释性、反馈闭环"},
+        {t:"需求分析与 PRD", d:"用户故事、需求优先级、PRD 结构化撰写",
+         a:"挑一个你每天在用的 AI 产品，写一页它的改进版 PRD",
+         k:"PRD 好到研发不用追问就能排期", q:"PRD 模板 AI 产品 示例",
+         s:"《人人都是产品经理》PRD 模板", m:60},
+        {t:"用户研究", d:"访谈、问卷、可用性测试、用户画像与旅程",
+         a:"做 3 场 20 分钟用户访谈，每场记录 5 句用户原话",
+         k:"能从原话里提炼出 1 个真实的、非表面的痛点", q:"用户访谈 提纲 怎么提问",
+         s:"《洞察用户体验》方法章节", m:90},
+        {t:"原型与交互设计", d:"Figma / Axure、信息架构、交互流程",
+         a:"用 Figma 把一个 AI 对话流程做成可点击原型",
+         k:"交付的原型包含加载、失败、空状态三种状态", q:"Figma AI 对话 原型 教程",
+         s:"Figma 官方 Learn", m:90},
+        {t:"AI 产品交互范式", d:"人机协同、不确定性设计、可解释性、反馈闭环",
+         a:"收集 5 个 AI 产品的失败态截图，做一页对比分析",
+         k:"能说清不确定性、可解释性如何落到具体界面上", q:"AI 产品 不确定性 交互设计 案例",
+         s:"Google PAIR《People + AI Guidebook》", m:60},
       ]},
       {name:"商业化能力", icon:"💰", items:[
-        {t:"成本核算", d:"Token / 推理成本、毛利模型、单位经济"},
-        {t:"定价与商业模式", d:"订阅 / 按量 / 增值、变现路径设计"},
-        {t:"价值与 ROI 评估", d:"收益测算、投入产出、商业论证"},
+        {t:"成本核算", d:"Token / 推理成本、毛利模型、单位经济",
+         a:"算清一个 AI 功能的单次调用 Token 成本和毛利",
+         k:"能报出这个功能的最低定价应该是多少", q:"大模型 token 成本 计算 毛利",
+         s:"各大模型厂商 API 定价页", m:45},
+        {t:"定价与商业模式", d:"订阅 / 按量 / 增值、变现路径设计",
+         a:"给同一个功能设计 3 种定价（订阅 / 按量 / 增值），列表对比",
+         k:"能说明每种定价分别适合什么用户和场景", q:"AI 产品 定价 策略 SaaS",
+         s:"a16z 定价系列文章", m:45},
+        {t:"价值与 ROI 评估", d:"收益测算、投入产出、商业论证",
+         a:"为一个 AI 项目写一页 ROI 测算：收益、投入、回收期",
+         k:"这份测算能说服老板批预算", q:"AI 项目 ROI 测算 模板",
+         s:"麦肯锡 / Gartner AI 价值评估报告", m:60},
       ]},
     ]
   },
@@ -293,499 +571,1160 @@ const PILLARS = [
     id:"soft", name:"软实力", sub:"获客 · 沟通 · 影响力", icon:"💬", color:"#ec4899",
     groups:[
       {name:"获客与增长", icon:"📈", items:[
-        {t:"增长黑客方法论", d:"AARRR 海盗模型、增长实验、病毒裂变"},
-        {t:"用户运营", d:"拉新 / 留存 / 促活、用户分层与生命周期"},
-        {t:"内容营销", d:"内容策划、SEO / ASO、社媒矩阵运营"},
-        {t:"渠道与投放", d:"渠道评估、买量投放、ROI 优化"},
-        {t:"社区与私域", d:"社群运营、私域流量、KOL / 达人合作"},
+        {t:"增长黑客方法论", d:"AARRR 海盗模型、增长实验、病毒裂变",
+         a:"画出自己产品的 AARRR 漏斗，标出每一层的数字和最大漏点",
+         k:"能提出 2 个可以这周就验证的增长实验", q:"AARRR 模型 拆解 案例",
+         s:"《增长黑客》", m:45},
+        {t:"用户运营", d:"拉新 / 留存 / 促活、用户分层与生命周期",
+         a:"把现有用户按活跃度分成 3 层，每层写一条触达话术",
+         k:"能设计一套可执行的分层运营 SOP", q:"用户分层 运营 策略 案例",
+         s:"《运营之光》", m:45},
+        {t:"内容营销", d:"内容策划、SEO / ASO、社媒矩阵运营",
+         a:"写一篇 800 字的产品向文章，今天就发出去",
+         k:"带来 10 个真实阅读，或者 1 条有效留言", q:"产品 内容营销 选题 方法",
+         s:"知乎 / 公众号 创作者数据后台", m:90},
+        {t:"渠道与投放", d:"渠道评估、买量投放、ROI 优化",
+         a:"用 200 元做一次小额投放测试，记录 CPC 和转化",
+         k:"能算出各渠道 ROI 并排出优先级", q:"信息流 小额投放 测试 ROI",
+         s:"巨量引擎 / 腾讯广告 官方课程", m:90},
+        {t:"社区与私域", d:"社群运营、私域流量、KOL / 达人合作",
+         a:"建一个 20 人的小群，做一次有主题的分享",
+         k:"能把群活跃度维持两周不掉", q:"私域 社群 运营 冷启动",
+         s:"《小群效应》", m:90},
       ]},
       {name:"沟通与表达", icon:"🗣️", items:[
-        {t:"结构化表达", d:"金字塔原理、结论先行、汇报逻辑"},
-        {t:"演讲与演示", d:"产品路演、Demo 展示、讲故事"},
-        {t:"跨部门协作", d:"与研发 / 设计 / 运营 / 管理层对齐"},
-        {t:"谈判与说服", d:"资源争取、需求博弈、冲突化解"},
-        {t:"商务写作", d:"PRD、商业计划、复盘报告"},
+        {t:"结构化表达", d:"金字塔原理、结论先行、汇报逻辑",
+         a:"用金字塔原理把上周的工作汇报重写成 1 页",
+         k:"结论先行、3 个论据、相互独立完全穷尽", q:"金字塔原理 汇报 结构化 案例",
+         s:"《金字塔原理》", m:45},
+        {t:"演讲与演示", d:"产品路演、Demo 展示、讲故事",
+         a:"录一段 3 分钟的产品介绍视频，回看后重录一版",
+         k:"能在 3 分钟内讲清价值点和差异点", q:"产品路演 3分钟 讲清楚 结构",
+         s:"TED 演讲结构拆解", m:60},
+        {t:"跨部门协作", d:"与研发 / 设计 / 运营 / 管理层对齐",
+         a:"找研发和运营各聊 20 分钟，记录他们最痛的 3 件事",
+         k:"能说出对方的 KPI 和你目标的重叠区在哪", q:"跨部门协作 对齐 沟通 方法",
+         s:"《关键对话》", m:60},
+        {t:"谈判与说服", d:"资源争取、需求博弈、冲突化解",
+         a:"为一个被拒过的需求准备一页说服材料，再提一次",
+         k:"材料里讲清了对方的收益和风险兜底", q:"职场 说服 谈判 技巧 案例",
+         s:"《影响力》《谈判力》", m:45},
+        {t:"商务写作", d:"PRD、商业计划、复盘报告",
+         a:"写一份 1 页复盘报告：结论 / 数据 / 原因 / 下一步",
+         k:"没参与过这件事的人也能看懂", q:"复盘报告 模板 结构",
+         s:"亚马逊 6-pager 写法", m:45},
       ]},
       {name:"用户洞察与共情", icon:"❤️", items:[
-        {t:"用户访谈技巧", d:"深挖真实需求、避免诱导式提问"},
-        {t:"需求洞察", d:"从现象到本质、痛点与场景挖掘"},
-        {t:"同理心与用户视角", d:"站在用户立场做产品决策"},
+        {t:"用户访谈技巧", d:"深挖真实需求、避免诱导式提问",
+         a:"做一次访谈，全程不许问「你想要什么功能」",
+         k:"能问出一个用户自己都没说清楚的需求", q:"用户访谈 提问技巧 避免诱导",
+         s:"《启示录》用户访谈章节", m:45},
+        {t:"需求洞察", d:"从现象到本质、痛点与场景挖掘",
+         a:"把一句用户抱怨拆成「现象 / 场景 / 本质」三层",
+         k:"能从 5 条反馈里归纳出 1 个真需求", q:"需求洞察 痛点 场景 分析方法",
+         s:"《需求》/ 俞军产品方法论", m:45},
+        {t:"同理心与用户视角", d:"站在用户立场做产品决策",
+         a:"以新用户身份完整走一遍自己产品，从注册到首次成功",
+         k:"能列出 3 个新手卡点，并各给一个改法", q:"用户体验 走查 新手引导 检查表",
+         s:"NN/g 可用性启发式十条", m:45},
       ]},
       {name:"领导力与项目管理", icon:"🧭", items:[
-        {t:"项目管理", d:"进度 / 风险 / 资源、敏捷 Scrum、里程碑"},
-        {t:"团队领导", d:"目标对齐、激励赋能、关键决策"},
-        {t:"向上管理", d:"管理预期、争取支持、汇报节奏"},
-        {t:"决策与优先级", d:"要事第一、取舍框架"},
+        {t:"项目管理", d:"进度 / 风险 / 资源、敏捷 Scrum、里程碑",
+         a:"为当前项目建一个看板，把所有任务拆到一周以内",
+         k:"能识别出关键路径和最大风险", q:"敏捷 Scrum 看板 项目管理 实践",
+         s:"《Scrum 敏捷软件开发》", m:45},
+        {t:"团队领导", d:"目标对齐、激励赋能、关键决策",
+         a:"和每个成员做一次 20 分钟的 1v1，记录目标和卡点",
+         k:"能说清每个人当前的成长诉求是什么", q:"1on1 怎么聊 团队管理 问题清单",
+         s:"《格鲁夫给经理人的第一课》", m:60},
+        {t:"向上管理", d:"管理预期、争取支持、汇报节奏",
+         a:"主动给老板发一次 200 字以内的进度同步",
+         k:"能预判老板会问的 3 个问题并备好答案", q:"向上管理 汇报 预期 方法",
+         s:"《卓有成效的管理者》", m:30},
+        {t:"决策与优先级", d:"要事第一、取舍框架",
+         a:"用 RICE 给手上 10 个需求排一次序",
+         k:"能解释清楚为什么砍掉其中 5 个", q:"RICE 优先级 排序 方法",
+         s:"Intercom RICE 打分法", m:45},
       ]},
       {name:"个人品牌与影响力", icon:"⭐", items:[
-        {t:"行业认知", d:"跟踪 AI 前沿、竞品与行业分析"},
-        {t:"个人 IP 打造", d:"公众号 / 知乎 / 小红书 / B站、技术写作"},
-        {t:"人脉网络", d:"行业社群、导师、同行交流"},
-        {t:"思维模型", d:"第一性原理、批判性思维、系统思考"},
+        {t:"行业认知", d:"跟踪 AI 前沿、竞品与行业分析",
+         a:"连续 7 天读 AI 行业日报，每天写一句自己的判断",
+         k:"能说出本季度 3 个关键趋势和它对你的影响", q:"AI 行业日报 周报 推荐",
+         s:"机器之心 / 量子位 / The Batch", m:30},
+        {t:"个人 IP 打造", d:"公众号 / 知乎 / 小红书 / B站、技术写作",
+         a:"选定一个平台，发布你的第一篇专业内容",
+         k:"连续 4 周更新，并收到 1 个外部反馈", q:"技术写作 公众号 冷启动 方法",
+         s:"即刻 / 知乎 / 小红书 创作者中心", m:90},
+        {t:"人脉网络", d:"行业社群、导师、同行交流",
+         a:"给一位行业前辈发一条有具体价值的提问私信",
+         k:"获得 1 次有效回复或一次见面", q:"如何 私信 行业前辈 提问",
+         s:"行业社群 / 领英", m:30},
+        {t:"思维模型", d:"第一性原理、批判性思维、系统思考",
+         a:"用第一性原理拆解一个你习以为常的产品决策",
+         k:"能说出 3 个可以迁移到别处的思维模型", q:"第一性原理 系统思考 案例",
+         s:"《穷查理宝典》/ 芒格思维模型", m:45},
       ]},
     ]
   },
   {
-    id:"practice", name:"社会化实践行动计划", sub:"证书 · 峰会 · 社区实战", icon:"🌐", color:"#10b981",
+    id:"practice", name:"社会化实践", sub:"证书 · 峰会 · 社区实战", icon:"🌐", color:"#10b981",
     groups:[
       {name:"证书与系统学习", icon:"🎓", tag:"证书", items:[
-        {t:"DeepLearning.AI 系列课", d:"Andrew Ng《AI for Everyone》《Generative AI for Everyone》《Prompt Engineering》", when:"1–2 个月"},
-        {t:"云厂商 AI 认证", d:"AWS AI Practitioner / Azure AI-900 / 阿里云 ACA·ACP / GCP ML Engineer", when:"2–3 个月"},
-        {t:"项目管理认证", d:"PMP / Google PM Certificate / 敏捷 CSM", when:"3 个月"},
-        {t:"国内职业认证", d:"人工智能训练师（职业技能等级）/ 软考系统分析师 / 工信部 AI 证书", when:"按需"},
-        {t:"AI 产品经理课程", d:"Coursera·edX 纳米学位、极客时间、三节课、起点课堂", when:"持续"},
+        {t:"DeepLearning.AI 系列课", d:"Andrew Ng 的 AI / 生成式 AI / 提示词系列",
+         a:"注册并学完《AI for Everyone》第一周的内容",
+         k:"拿到这门课的结业证书", q:"DeepLearning.AI AI for Everyone",
+         s:"DeepLearning.AI 官网 / Coursera", m:120},
+        {t:"云厂商 AI 认证", d:"AWS / Azure / 阿里云 / GCP 的 AI 认证",
+         a:"选定一个认证，下载官方考纲，圈出「已会 / 不会」",
+         k:"通过一门云厂商 AI 认证考试", q:"AWS AI Practitioner 考纲",
+         s:"AWS / Azure / 阿里云 认证官网", m:120},
+        {t:"项目管理认证", d:"PMP / Google PM Certificate / 敏捷 CSM",
+         a:"看一遍 PMP 考纲，做一套 20 题模拟自测",
+         k:"完成报名并进入备考计划", q:"PMP 考纲 模拟题 自测",
+         s:"PMI 官网", m:90},
+        {t:"国内职业认证", d:"人工智能训练师 / 软考 / 工信部 AI 证书",
+         a:"查清「人工智能训练师」的报考条件和最近考期",
+         k:"确定一个证书并完成报名", q:"人工智能训练师 报考条件 时间",
+         s:"人社部职业技能等级认定官网", m:45},
+        {t:"AI 产品经理课程", d:"极客时间 / 三节课 / 起点课堂等体系课",
+         a:"挑一门课，试听第一讲并写下 3 条笔记",
+         k:"完整学完一门，并输出 1 篇自己的总结", q:"AI 产品经理 课程 推荐 极客时间",
+         s:"极客时间 / 三节课 / 起点课堂", m:90},
       ]},
       {name:"行业峰会与大会", icon:"🎤", tag:"峰会", items:[
-        {t:"世界人工智能大会 WAIC", d:"上海 · 每年 7 月，全球 AI 顶级风向标", when:"7 月"},
-        {t:"云栖大会", d:"杭州 · 9 月，阿里云技术与产业生态", when:"9 月"},
-        {t:"大厂开发者大会", d:"百度 Create / 腾讯全球数字生态 / 华为 HDC", when:"全年"},
-        {t:"技术架构大会", d:"ArchSummit / QCon / GMTC", when:"全年"},
-        {t:"学术前沿会议", d:"NeurIPS / ICML / CVPR，看论文与技术趋势", when:"关注"},
-        {t:"产品类大会", d:"Mind the Product / ProductCon / 中国产品经理大会", when:"全年"},
+        {t:"世界人工智能大会 WAIC", d:"上海 · 每年 7 月，全球 AI 风向标",
+         a:"订阅 WAIC 官方公众号，把今年日程标记到日历",
+         k:"现场参加一次，并输出 1 篇见闻", q:"世界人工智能大会 WAIC 日程 门票",
+         s:"WAIC 官网", m:30},
+        {t:"云栖大会", d:"杭州 · 9 月，阿里云技术与产业生态",
+         a:"回看上一届的 1 场分论坛，记 3 条要点",
+         k:"现场参加，或完整看完 3 场分论坛", q:"云栖大会 分论坛 回放",
+         s:"云栖大会官网", m:60},
+        {t:"大厂开发者大会", d:"百度 Create / 腾讯数字生态 / 华为 HDC",
+         a:"选一家，完整看完一场 Keynote",
+         k:"输出一篇大厂 AI 战略对比", q:"百度 Create 大会 回放 AI",
+         s:"各厂开发者大会官网", m:60},
+        {t:"技术架构大会", d:"ArchSummit / QCon / GMTC",
+         a:"在 ArchSummit 官网挑 1 个 AI 架构议题看回放",
+         k:"能把其中一个架构方案讲给团队听", q:"ArchSummit AI 架构 议题 回放",
+         s:"InfoQ / ArchSummit 官网", m:60},
+        {t:"学术前沿会议", d:"NeurIPS / ICML / CVPR，看论文与技术趋势",
+         a:"在 arXiv 上读一篇 NeurIPS 高引论文的摘要并总结",
+         k:"能说出 3 个正在成形的技术方向", q:"NeurIPS 高引论文 2024 解读",
+         s:"arXiv / Papers with Code", m:60},
+        {t:"产品类大会", d:"Mind the Product / ProductCon / PM 大会",
+         a:"看一场 Mind the Product 的演讲，写 3 条启发",
+         k:"把其中 1 个方法用在自己的产品上", q:"Mind the Product 演讲 回放",
+         s:"Mind the Product 官网", m:45},
       ]},
       {name:"社区与实战", icon:"🤝", tag:"实践", items:[
-        {t:"开源与社区贡献", d:"GitHub 参与 AI 项目、HuggingFace 社区", when:"持续"},
-        {t:"技术写作输出", d:"公众号 / 知乎 / 博客沉淀 AI 产品方法论", when:"每周"},
-        {t:"行业社群", d:"人人都是产品经理、PMTalk、AI 产品经理社群", when:"持续"},
-        {t:"Hackathon 黑客松", d:"参加 AI 黑客松、创新创业大赛", when:"每季度"},
-        {t:"线下 Meetup", d:"城市 AI / 产品沙龙、读书会", when:"每月"},
-        {t:"实战项目", d:"从 0 到 1 做 AI 产品 Demo、参与真实落地项目", when:"持续"},
+        {t:"开源与社区贡献", d:"GitHub 参与 AI 项目、HuggingFace 社区",
+         a:"给一个 AI 开源项目提第一个 issue，或者改一处文档",
+         k:"有 1 个 PR 被合并进主仓库", q:"如何 给开源项目 提第一个 PR",
+         s:"GitHub Good First Issue", m:90},
+        {t:"技术写作输出", d:"公众号 / 知乎 / 博客沉淀 AI 产品方法论",
+         a:"定一个固定栏目，写出第一篇并发布",
+         k:"连续 8 周更新，累计 8 篇", q:"技术写作 选题 栏目 规划",
+         s:"公众号 / 知乎 / 掘金", m:90},
+        {t:"行业社群", d:"人人都是产品经理、PMTalk、AI PM 社群",
+         a:"加入 2 个 AI 产品社群，各发一次有信息量的自我介绍",
+         k:"在社群里被至少 3 个人认识", q:"AI 产品经理 社群 推荐 加入",
+         s:"人人都是产品经理 / PMTalk", m:30},
+        {t:"Hackathon 黑客松", d:"参加 AI 黑客松、创新创业大赛",
+         a:"报名一场线上 AI 黑客松，并找个队友",
+         k:"完整参赛一次，并交出一个 Demo", q:"AI 黑客松 报名 2025",
+         s:"Devpost / 各厂黑客松官网", m:120},
+        {t:"线下 Meetup", d:"城市 AI / 产品沙龙、读书会",
+         a:"在同城活动平台找一场 AI 或产品沙龙，直接报名",
+         k:"参加 3 场，每场至少认识 1 个人", q:"AI 产品 沙龙 同城 活动 报名",
+         s:"活动行 / Meetup", m:60},
+        {t:"实战项目", d:"从 0 到 1 做 AI 产品 Demo、参与真实落地",
+         a:"定一个 2 周能做完的 AI 小产品，先写出 1 页需求",
+         k:"上线一个真的能被别人使用的 Demo", q:"AI 小产品 从0到1 案例 独立开发",
+         s:"Product Hunt / 独立开发者社区", m:120},
       ]},
     ]
   }
 ];
 
-/* ============ 状态 ============ */
-const STORE_KEY = "aippm_progress_v1";
-const THEME_KEY = "aippm_theme";
-let progress = {};   // id -> {done, ts, note}
-let activeTab = "dashboard";
-let filter = "all";  // all | todo | done
-let query = "";
+/* ============ 状态键 ============ */
+const STORE_KEY="aippm_progress_v1";     // 键名保留，旧数据可无缝迁移
+const PLAN_KEY ="aippm_plan_v2";
+const DAYS_KEY ="aippm_days_v1";
+const SESS_KEY ="aippm_sessions_v1";
+const TIMER_KEY="aippm_timer_v1";
+const THEME_KEY="aippm_theme";
+const SET_KEY  ="aippm_settings_v1";
 
-function loadProgress(){
-  try{ progress = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }catch(e){ progress = {}; }
-}
-function saveProgress(){ localStorage.setItem(STORE_KEY, JSON.stringify(progress)); schedulePush(); }
+let progress = {};          // id -> {st:0|1|2, ts, note}
+let plan     = { weeks:{} }; // weeks[周一日期] -> {items:[id], goals:[], reflection, reviewedAt}
+let days     = {};          // "YYYY-MM-DD" -> true（有实质推进的日子）
+let sessions = [];          // [{id, min, ts}]
+let timer    = null;        // {id, endTs, min}
+let settings = { daily:1, weekly:3, focus:25 };
+let activeTab = "today";
+let mapPillar = "all", mapFilter = "all", mapQuery = "";
+let swapIdx   = 0;
 
-function itemId(pid, gi, ii){ return pid + "-" + gi + "-" + ii; }
-function allItems(){
-  const out = [];
-  PILLARS.forEach(p => p.groups.forEach((g, gi) => g.items.forEach((it, ii) => {
-    out.push({ id: itemId(p.id, gi, ii), pillar:p, group:g, item:it, gi, ii });
-  })));
-  return out;
+const STAGE_NAME=["未开始","学习中","已掌握"];
+const STAGE_W=[0,.5,1];
+
+/* ============ 持久化 ============ */
+function dstr(d){ d=d||new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function loadAll(){
+  try{ progress=JSON.parse(localStorage.getItem(STORE_KEY))||{}; }catch(e){ progress={}; }
+  // v1 迁移：{done:true, ts, note} -> {st:2, ts, note}
+  let migrated=false;
+  Object.keys(progress).forEach(k=>{
+    const p=progress[k]; if(!p||typeof p!=="object") return;
+    if(p.st===undefined){ p.st=p.done?2:0; delete p.done; delete p._open; migrated=true; }
+  });
+  try{ plan=JSON.parse(localStorage.getItem(PLAN_KEY)); if(!plan||!plan.weeks) plan={weeks:{}}; }
+  catch(e){ plan={weeks:{}}; }
+  // 从 v1 冲刺数据搬一次自定义目标
+  try{
+    const had=localStorage.getItem(PLAN_KEY);
+    const old=JSON.parse(localStorage.getItem("aippm_plan_v1"));
+    if(!had && old && old.weeks){
+      Object.keys(old.weeks).forEach(k=>{
+        const w=old.weeks[k];
+        plan.weeks["old-"+k]={items:[],goals:(w.goals||[]),reflection:w.reflection||"",reviewedAt:w.reviewedAt||null};
+      });
+      localStorage.setItem(PLAN_KEY,JSON.stringify(plan));
+    }
+  }catch(e){}
+  try{ days=JSON.parse(localStorage.getItem(DAYS_KEY))||{}; }catch(e){ days={}; }
+  try{ sessions=JSON.parse(localStorage.getItem(SESS_KEY))||[]; }catch(e){ sessions=[]; }
+  try{ const s=JSON.parse(localStorage.getItem(SET_KEY)); if(s) settings=Object.assign(settings,s); }catch(e){}
+  try{ timer=JSON.parse(localStorage.getItem(TIMER_KEY)); }catch(e){ timer=null; }
+  if(migrated) saveProgress(true);
 }
-function pillarItems(pid){ return allItems().filter(x => x.pillar.id === pid); }
-function isDone(id){ return !!(progress[id] && progress[id].done); }
+function saveProgress(silent){ localStorage.setItem(STORE_KEY,JSON.stringify(progress)); if(!silent) schedulePush(); }
+function savePlan(){ localStorage.setItem(PLAN_KEY,JSON.stringify(plan)); schedulePush(); }
+function saveDays(){ localStorage.setItem(DAYS_KEY,JSON.stringify(days)); }
+function saveSessions(){ localStorage.setItem(SESS_KEY,JSON.stringify(sessions.slice(-400))); }
+function saveTimer(){ timer?localStorage.setItem(TIMER_KEY,JSON.stringify(timer)):localStorage.removeItem(TIMER_KEY); }
+function saveSettings(){ localStorage.setItem(SET_KEY,JSON.stringify(settings)); }
 
 /* ============ 工具 ============ */
-const $ = sel => document.querySelector(sel);
-function fmtDate(ts){ const d=new Date(ts); return (d.getMonth()+1)+"月"+d.getDate()+"日"; }
-function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._x); t._x=setTimeout(()=>t.classList.remove("show"),1900); }
-function esc(s){ return (s||"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+const $=s=>document.querySelector(s);
+const $$=s=>Array.prototype.slice.call(document.querySelectorAll(s));
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show");
+  clearTimeout(t._x); t._x=setTimeout(()=>t.classList.remove("show"),2200); }
+function itemId(pid,gi,ii){ return pid+"-"+gi+"-"+ii; }
+let _cache=null;
+function ITEMS(){
+  if(!_cache){
+    _cache=[];
+    PILLARS.forEach(p=>p.groups.forEach((g,gi)=>g.items.forEach((it,ii)=>{
+      _cache.push({id:itemId(p.id,gi,ii),pillar:p,group:g,item:it,gi:gi,ii:ii});
+    })));
+  }
+  return _cache;
+}
+function byId(id){ const a=ITEMS(); for(let i=0;i<a.length;i++) if(a[i].id===id) return a[i]; return null; }
+function stOf(id){ const p=progress[id]; return (p&&p.st!=null)?p.st:0; }
+function isMastered(id){ return stOf(id)===2; }
+function noteOf(id){ return (progress[id]&&progress[id].note)||""; }
 
-/* ============ 渲染 ============ */
-function render(){
-  renderRing();
-  if(activeTab === "dashboard") renderDashboard();
-  else if(activeTab === "sprint") renderSprint();
-  else renderPillar(activeTab);
+/* ============ 日期 / 周 ============ */
+function todayKey(){ return dstr(new Date()); }
+function mondayOf(d){ const t=new Date(d); t.setHours(0,0,0,0);
+  const dow=(t.getDay()+6)%7; t.setDate(t.getDate()-dow); return t; }
+function weekKey(){ return dstr(mondayOf(new Date())); }
+function weekKeyOf(off){ const m=mondayOf(new Date()); m.setDate(m.getDate()+off*7); return dstr(m); }
+function weekLabel(k){ const s=new Date(k+"T00:00:00"), e=new Date(s.getTime()+6*864e5);
+  return (s.getMonth()+1)+"/"+s.getDate()+" – "+(e.getMonth()+1)+"/"+e.getDate(); }
+function ensureWeek(k){
+  k=k||weekKey();
+  if(!plan.weeks[k]) plan.weeks[k]={items:[],goals:[],reflection:"",reviewedAt:null};
+  const w=plan.weeks[k];
+  if(!w.items) w.items=[]; if(!w.goals) w.goals=[];
+  return w;
+}
+function curWeek(){ return ensureWeek(weekKey()); }
+
+/* ============ 统计 ============ */
+function markedDay(){ days[todayKey()]=true; saveDays(); }
+function weightedPct(){
+  const total=ITEMS().length*2;
+  let got=0; ITEMS().forEach(x=>got+=STAGE_W[stOf(x.id)]);
+  return total?Math.round(got/total*100):0;
+}
+function countByStage(){ const c=[0,0,0]; ITEMS().forEach(x=>c[stOf(x.id)]++); return c; }
+function progressedToday(){
+  const t=todayKey();
+  return ITEMS().filter(x=>{ const p=progress[x.id];
+    return p&&p.ts&&p.st>=1&&dstr(new Date(p.ts))===t; }).length;
+}
+function minutesOn(k){ return sessions.filter(s=>dstr(new Date(s.ts))===k).reduce((a,b)=>a+(b.min||0),0); }
+function minutesThisWeek(){
+  const ws=new Date(weekKey()+"T00:00:00").getTime(), we=ws+7*864e5;
+  return sessions.filter(s=>s.ts>=ws&&s.ts<we).reduce((a,b)=>a+(b.min||0),0);
+}
+function streak(){
+  let n=0; const d=new Date();
+  if(!days[dstr(d)]) d.setDate(d.getDate()-1);
+  while(days[dstr(d)]){ n++; d.setDate(d.getDate()-1); }
+  return n;
+}
+function longestStreak(){
+  const keys=Object.keys(days).sort(); let best=0,run=0,prev=null;
+  keys.forEach(k=>{
+    const t=new Date(k+"T00:00:00").getTime();
+    run=(prev!==null&&t-prev===864e5)?run+1:1;
+    prev=t; if(run>best) best=run;
+  });
+  return best;
+}
+function weekActiveDays(){
+  const ws=new Date(weekKey()+"T00:00:00").getTime(), we=ws+7*864e5;
+  return Object.keys(days).filter(k=>{ const t=new Date(k+"T00:00:00").getTime(); return t>=ws&&t<we; }).length;
 }
 
-function renderRing(){
-  const items = allItems();
-  const done = items.filter(x => isDone(x.id)).length;
-  const total = items.length;
-  const pct = total ? Math.round(done/total*100) : 0;
-  const C = 263.9;
-  $("#ringFill").style.strokeDashoffset = String(C - C*pct/100);
-  $("#ringPct").textContent = pct + "%";
-  $("#statDone").textContent = done;
-  $("#statTotal").textContent = total;
-  // 近7天
-  const weekAgo = Date.now() - 7*864e5;
-  $("#statWeek").textContent = items.filter(x => progress[x.id] && progress[x.id].ts >= weekAgo).length;
-  // 累计天数（去重打卡日期）
-  const days = new Set(Object.values(progress).filter(p=>p.done).map(p=>new Date(p.ts).toDateString()));
-  $("#statStreak").textContent = days.size;
+/* ============ 推荐：现在做什么 ============ */
+function candidates(){
+  const all=ITEMS();
+  const doing=all.filter(x=>stOf(x.id)===1)
+                 .sort((a,b)=>((progress[b.id]||{}).ts||0)-((progress[a.id]||{}).ts||0));
+  const w=curWeek();
+  const planned=w.items.map(byId).filter(Boolean).filter(x=>stOf(x.id)===0);
+  const rest=all.filter(x=>stOf(x.id)===0 && w.items.indexOf(x.id)<0);
+  const out=doing.concat(planned);
+  const seen={}; out.forEach(x=>seen[x.id]=1);
+  // 按支柱轮转，避免连着全是硬实力
+  const buckets={};
+  rest.forEach(x=>{ if(!buckets[x.pillar.id]) buckets[x.pillar.id]=[]; buckets[x.pillar.id].push(x); });
+  const order=PILLARS.map(p=>p.id);
+  let guard=0;
+  while(order.some(pid=>buckets[pid]&&buckets[pid].length)&&guard++<600){
+    order.forEach(pid=>{ if(buckets[pid]&&buckets[pid].length){ const it=buckets[pid].shift(); if(!seen[it.id]) out.push(it); } });
+  }
+  return out;
+}
+function currentFocus(){ const c=candidates(); return c.length?c[swapIdx%c.length]:null; }
+function swapFocus(){ swapIdx++; render(); }
+
+/* ============ 三态 ============ */
+function setStage(id,st){
+  const prev=progress[id]||{};
+  progress[id]={st:st,ts:Date.now(),note:prev.note||""};
+  if(st>=1) markedDay();
+  saveProgress();
+  render();
+  if(sheetId===id && $("#sheetWrap").classList.contains("open")) openSheet(id,true);
+  toast(st===2?"已掌握 ✓ 继续保持":(st===1?"已开始，慢慢来 🌱":"已重置为未开始"));
+}
+function cycleStage(id){
+  const c=stOf(id);
+  setStage(id, c===0?1:(c===1?2:0));
 }
 
-function renderDashboard(){
-  const items = allItems();
-  const pillarsHtml = PILLARS.map(p=>{
-    const its = pillarItems(p.id);
-    const dn = its.filter(x=>isDone(x.id)).length;
-    const pc = its.length? Math.round(dn/its.length*100):0;
-    return `<div class="pillar-card" onclick="goTab('${p.id}')">
-      <div class="glow" style="background:${p.color}"></div>
-      <div class="pc-emoji" style="background:${p.color}">${p.icon}</div>
-      <h3>${p.name}</h3>
-      <div class="sub">${p.sub}</div>
-      <div class="pc-stat"><span>完成度</span><b>${dn}/${its.length} · ${pc}%</b></div>
-      <div class="bar"><i style="width:${pc}%;background:${p.color}"></i></div>
+/* ============ 专注计时 ============ */
+let ticker=null;
+function startTimer(id,min){
+  timer={id:id,endTs:Date.now()+min*60000,min:min};
+  saveTimer(); tickTimer(); render();
+  toast("专注 "+min+" 分钟，开始 🌱");
+  if("Notification" in window && Notification.permission==="default"){
+    try{ Notification.requestPermission(); }catch(e){}
+  }
+}
+function stopTimer(silent){
+  if(timer&&!silent){
+    const used=Math.round((Date.now()-(timer.endTs-timer.min*60000))/60000);
+    if(used>=1){
+      sessions.push({id:timer.id,min:used,ts:Date.now()}); saveSessions(); markedDay();
+      const p=progress[timer.id]||{};
+      if((p.st||0)<1) progress[timer.id]={st:1,ts:Date.now(),note:p.note||""};
+      saveProgress(); toast("本次专注 "+used+" 分钟，已记录 ✓");
+    }
+  }
+  timer=null; saveTimer(); tickTimer(); render();
+  if(sheetId) openSheet(sheetId,true);
+}
+function finishTimer(){
+  const id=timer?timer.id:null, min=timer?timer.min:0;
+  timer=null; saveTimer();
+  if(id){
+    sessions.push({id:id,min:min,ts:Date.now()}); saveSessions(); markedDay();
+    const p=progress[id]||{};
+    if((p.st||0)<1) progress[id]={st:1,ts:Date.now(),note:p.note||""};
+    saveProgress();
+    const it=byId(id);
+    notify("专注完成 🎉",(it?it.item.t:"")+" · 已完成 "+min+" 分钟，去写下你的收获吧");
+    toast("专注完成 🎉 已标记为学习中");
+    openSheet(id);
+  }
+  tickTimer(); render();
+}
+function notify(title,body){
+  try{ if("Notification" in window && Notification.permission==="granted") new Notification(title,{body:body}); }catch(e){}
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(AC){
+      const c=new AC(), o=c.createOscillator(), g=c.createGain();
+      o.connect(g); g.connect(c.destination); o.type="sine"; o.frequency.value=880;
+      g.gain.setValueAtTime(.0001,c.currentTime);
+      g.gain.exponentialRampToValueAtTime(.2,c.currentTime+.05);
+      g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.9);
+      o.start(); o.stop(c.currentTime+.95);
+    }
+  }catch(e){}
+}
+function remainingMs(){ return timer?Math.max(0,timer.endTs-Date.now()):0; }
+function fmtClock(ms){ const s=Math.ceil(ms/1000), m=Math.floor(s/60);
+  return m+":"+String(s%60).padStart(2,"0"); }
+function tickTimer(){
+  const rem=remainingMs();
+  $$(".timer-pill").forEach(el=>{
+    if(timer){ el.classList.remove("hidden"); el.innerHTML='<span class="tp-dot"></span>'+fmtClock(rem); }
+    else el.classList.add("hidden");
+  });
+  const d=$("#sheetTimerDisp"); if(d&&timer) d.textContent=fmtClock(rem);
+  const b=$("#sheetTimerBar");
+  if(b&&timer){ const total=timer.min*60000; b.style.width=Math.min(100,(total-rem)/total*100)+"%"; }
+  if(timer&&rem<=0) finishTimer();
+}
+function tickLoop(){
+  clearInterval(ticker);
+  ticker=setInterval(tickTimer,1000);
+}
+
+/* ============ 导航 ============ */
+const TABS=[
+  {id:"today", name:"今天", icon:"☀️"},
+  {id:"map",   name:"地图", icon:"🗺️"},
+  {id:"plan",  name:"计划", icon:"🎯"},
+  {id:"me",    name:"我的", icon:"📊"}
+];
+function renderNav(){
+  const c=countByStage();
+  const doneToday=progressedToday();
+  const badge={
+    today: doneToday>=settings.daily ? "✓" : (doneToday||""),
+    map:   c[1]||"",
+    plan:  curWeek().items.filter(id=>stOf(id)<2).length||"",
+    me:    ""
+  };
+  const has=v=>v!==""&&v!=null;
+  $("#railNav").innerHTML=TABS.map(t=>`
+    <button class="${activeTab===t.id?'on':''}" onclick="goTab('${t.id}')">
+      <span class="rn-ic">${t.icon}</span><span>${t.name}</span>
+      ${has(badge[t.id])?`<span class="rn-badge">${badge[t.id]}</span>`:""}
+    </button>`).join("");
+  $("#bottomNav").innerHTML=TABS.map(t=>`
+    <button class="${activeTab===t.id?'on':''}" onclick="goTab('${t.id}')">
+      <span class="bn-ic">${t.icon}</span><span>${t.name}</span>
+      ${has(badge[t.id])?`<span class="bn-dot">${badge[t.id]}</span>`:""}
+    </button>`).join("");
+  const cur=TABS.filter(t=>t.id===activeTab)[0];
+  $("#abTitle").innerHTML="<span>"+cur.icon+"</span>"+cur.name;
+  if($("#ringFill")){
+    const pct=weightedPct(), C=169.6;
+    $("#ringFill").style.strokeDashoffset=String(C-C*pct/100);
+    $("#ringPct").textContent=pct+"%";
+    $("#ringBar").style.width=pct+"%";
+    $("#ringSub").textContent=c[2]+" / "+ITEMS().length+" 项已掌握";
+  }
+}
+
+/* ============ 今天 ============ */
+function renderToday(){
+  const doneToday=progressedToday();
+  const goalMet=doneToday>=settings.daily;
+  const c=countByStage();
+  const focus=currentFocus();
+  const w=curWeek();
+  const wList=w.items.map(byId).filter(Boolean);
+  const wDone=wList.filter(x=>stOf(x.id)===2).length;
+  const wDoing=wList.filter(x=>stOf(x.id)===1).length;
+  const sk=streak();
+  const firstRun=Object.keys(days).length===0 && sessions.length===0 && c[1]===0 && c[2]===0;
+  const startMin=focus?Math.min(focus.item.m,settings.focus):settings.focus;
+
+  const prevK=weekKeyOf(-1), prevW=plan.weeks[prevK];
+  const prevLeft=prevW?(prevW.items.filter(id=>stOf(id)<2).length+(prevW.goals||[]).filter(g=>!g.done).length):0;
+  const rollBanner=(prevLeft>0&&!(prevW&&prevW.rolledAt))
+    ? `<div class="banner">📦 上周还有 <b>${prevLeft}</b> 件事没做完
+        <button class="btn btn-sm" onclick="rollover()">滚入本周</button>
+        <button class="btn btn-sm" onclick="dismissRollover()">不滚了</button></div>` : "";
+
+  const focusHtml=focus?`
+    <div class="focus">
+      <div class="focus-accent" style="background:${focus.pillar.color}"></div>
+      <div class="focus-in">
+        <div class="f-crumb">
+          <span class="tag" style="background:${focus.pillar.color}22;color:${focus.pillar.color}">${focus.pillar.icon} ${esc(focus.pillar.name)}</span>
+          <span>${esc(focus.group.name)}</span>
+          ${stOf(focus.id)===1?'<span class="pill st1">学习中</span>':''}
+        </div>
+        <div class="f-title">${esc(focus.item.t)}</div>
+        <div class="f-desc">${esc(focus.item.d)}</div>
+        <div class="action-box" style="margin-bottom:13px">
+          <div class="ab-label">▶ 第一步就做这个</div>
+          <div class="ab-text">${esc(focus.item.a)}</div>
+          <div class="kpi-row"><span class="k-ic">🎯</span>
+            <span class="k-tx">做完的标准：<b>${esc(focus.item.k)}</b></span></div>
+        </div>
+        <div class="f-meta">
+          <span class="meta-pill">⏱ 约 ${focus.item.m} 分钟</span>
+          <span class="meta-pill">📚 ${esc(focus.item.s)}</span>
+        </div>
+        <div class="f-actions">
+          ${timer
+            ? `<button class="btn btn-primary btn-wide" onclick="openTimerSheet()">⏱ 专注中 ${fmtClock(remainingMs())}</button>`
+            : `<button class="btn btn-primary btn-wide" onclick="startTimer('${focus.id}',${startMin})">▶ 开始 ${startMin} 分钟</button>`}
+          <button class="btn btn-line" onclick="openSheet('${focus.id}')">查看详情</button>
+          <button class="btn btn-soft" onclick="swapFocus()">换一个</button>
+        </div>
+      </div>
+    </div>`
+    :`<div class="panel"><div class="empty"><span class="e-ic">🎉</span>
+        63 个知识点全部标记为已掌握。<br/>去「我的」看看你的累计数据吧。</div></div>`;
+
+  const doneList=ITEMS().filter(x=>{ const p=progress[x.id];
+    return p&&p.ts&&p.st>=1&&dstr(new Date(p.ts))===todayKey(); });
+  const doneHtml=doneList.map(x=>`
+    <div class="row">
+      <span class="checkbox on" style="--pc:${x.pillar.color}">✓</span>
+      <div class="r-tx" style="cursor:default"><span class="r-t">${esc(x.item.t)}</span>
+        <div class="r-sub">${STAGE_NAME[stOf(x.id)]} · ${esc(x.pillar.name)}</div></div>
+    </div>`).join("");
+
+  const wHtml=wList.length?wList.map(x=>{
+    const s=stOf(x.id);
+    return `<div class="row ${s===2?'done':''}">
+      <span class="checkbox ${s===2?'on':(s===1?'st1':'')}" style="--pc:${x.pillar.color}"
+        onclick="cycleStage('${x.id}')">${s===2?'✓':(s===1?'·':'')}</span>
+      <div class="r-tx" onclick="openSheet('${x.id}')"><span class="r-t">${esc(x.item.t)}</span>
+        <div class="r-sub">${esc(x.item.a)}</div></div>
     </div>`;
-  }).join("");
+  }).join("") : `<div class="empty" style="padding:16px"><span class="e-ic">🎯</span>
+      本周还没排动作。<br/>点下面按钮，从地图挑 ${settings.weekly} 个。</div>`;
 
-  // 下一个待学（按 pillar 顺序）
-  const next = items.find(x=>!isDone(x.id));
-  const nextHtml = next
-    ? `<div class="next-item">
-        <div class="ni-emoji">${next.pillar.icon}</div>
-        <div><b>${esc(next.item.t)}</b><br/><span>${esc(next.pillar.name)} · ${esc(next.group.name)}</span></div>
-        <button class="go-btn" onclick="goTab('${next.pillar.id}')">去学习 →</button>
-      </div>`
-    : `<div class="empty">🎉 全部知识项已掌握，太厉害了！</div>`;
-
-  // 最近打卡
-  const recent = items.filter(x=>isDone(x.id)).sort((a,b)=>progress[b.id].ts-progress[a.id].ts).slice(0,6);
-  const recentHtml = recent.length
-    ? `<div class="recent">`+recent.map(x=>`<div class="recent-row">
-        <span>${x.pillar.icon}</span><span>${esc(x.item.t)}</span>
-        <span class="rk">${fmtDate(progress[x.id].ts)}</span></div>`).join("")+`</div>`
-    : `<div class="empty">还没有打卡记录，点击任意知识项开始学习 ✍️</div>`;
-
-  $("#view").innerHTML = `
-    <div class="pillars-grid">${pillarsHtml}</div>
-    <div class="panel">
-      <h3>🎯 下一步建议</h3>
-      ${nextHtml}
-    </div>
-    <div class="panel">
-      <h3>🕒 最近打卡</h3>
-      ${recentHtml}
-    </div>
-    <div class="panel">
-      <h3>💡 使用说明</h3>
-      <div class="tips">
-        · 点击任意知识卡片即可 <b>打卡</b>，再次点击取消。<br/>
-        · 卡片右下角 <b>📝</b> 可记录学习笔记与心得。<br/>
-        · 进度自动保存在 <b>本设备浏览器</b>；换设备用右上角 <b>⬇️ 导出 / ⬆️ 导入</b> 迁移。<br/>
-        · 顶部 <b>🌙</b> 切换深浅色，适配电脑与手机。
+  $("#view").innerHTML=`
+    ${rollBanner}
+    <div class="promise ${goalMet?'done':''}" style="margin-top:12px">
+      <div class="p-top">${goalMet?'✅ 今日已完成':'☀️ 今日承诺'}</div>
+      <div class="p-big">${goalMet?'可以收工了':'完成 '+settings.daily+' 个动作'}</div>
+      <div class="p-sub">${goalMet
+        ? "今天推进了 "+doneToday+" 项 · 连续 "+sk+" 天"
+        : "今天推进了 "+doneToday+" / "+settings.daily+" 项 · 一个动作 25 分钟起步，不求多"}</div>
+      <div class="p-bar"><i style="width:${Math.min(100,doneToday/settings.daily*100)}%"></i></div>
+      <div class="p-actions">
+        ${goalMet
+          ? `<button class="btn btn-ghost-w" onclick="goTab('plan')">写本周复盘</button>
+             <button class="btn btn-white" onclick="swapFocus()">再学一个</button>`
+          : (timer
+              ? `<button class="btn btn-white" onclick="openTimerSheet()">⏱ 专注中 ${fmtClock(remainingMs())}</button>`
+              : (focus
+                  ? `<button class="btn btn-white" onclick="startTimer('${focus.id}',${startMin})">▶ 现在开始 ${startMin} 分钟</button>`
+                  : `<button class="btn btn-white" onclick="goTab('map')">去地图挑一个</button>`))}
       </div>
     </div>
-    ${syncPanelHtml()}`;
+
+    <div id="focusAnchor"></div>
+    <div class="sect-h">🎯 现在做这个<span class="sh-sub">不是「该学什么」，是「现在做什么」</span></div>
+    ${focusHtml}
+
+    ${firstRun
+      ? `<div class="panel" style="margin-top:16px">
+          <div style="font-size:14px;font-weight:750;margin-bottom:11px">👋 第一次用？只要记住这三步</div>
+          <div class="row"><span style="font-size:17px">1️⃣</span><div class="r-tx" style="cursor:default">
+            <span class="r-t">点上面的「开始 ${settings.focus} 分钟」</span>
+            <div class="r-sub">不用挑也不用想，应用已经替你选好了下一个动作</div></div></div>
+          <div class="row"><span style="font-size:17px">2️⃣</span><div class="r-tx" style="cursor:default">
+            <span class="r-t">这 ${settings.focus} 分钟只做那一件事</span>
+            <div class="r-sub">计时结束自动记为「学习中」——不需要先学会才能打勾</div></div></div>
+          <div class="row"><span style="font-size:17px">3️⃣</span><div class="r-tx" style="cursor:default">
+            <span class="r-t">结束后写一句收获</span>
+            <div class="r-sub">哪怕只有一句。明天打开时它还在那儿</div></div></div>
+          <div class="note" style="margin-top:11px">今天做到 1 个动作就收工——这是设计好的，不是偷懒。</div>
+        </div>`
+      : `<div class="stats" style="margin-top:16px">
+          <div class="stat"><span class="s-ic">🔥</span><b>${sk}</b><span>连续天数</span></div>
+          <div class="stat"><span class="s-ic">⏱</span><b>${minutesThisWeek()}</b><span>本周专注(分)</span></div>
+          <div class="stat"><span class="s-ic">🌱</span><b>${c[1]}</b><span>学习中</span></div>
+          <div class="stat"><span class="s-ic">✅</span><b>${c[2]}</b><span>已掌握</span></div>
+        </div>`}
+
+    <div class="sect-h">📌 本周动作<span class="sh-sub">${wDone}/${wList.length} 已完成${wDoing?" · "+wDoing+" 进行中":""}</span></div>
+    <div class="panel">
+      ${wHtml}
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-soft btn-sm" onclick="autoPlanWeek()">✨ 从地图挑 ${settings.weekly} 个</button>
+        <button class="btn btn-line btn-sm" onclick="goTab('plan')">管理本周</button>
+      </div>
+    </div>
+
+    ${doneHtml?`<div class="sect-h">✅ 今天推进的</div><div class="panel">${doneHtml}</div>`:""}
+
+    <div class="sect-h">💡 怎么用</div>
+    <div class="panel"><div class="note">
+      · 打开就点<b>「开始 ${settings.focus} 分钟」</b>，计时结束自动记为「学习中」——不需要先学会才能打勾。<br/>
+      · 进度有<b>三态</b>：未开始 / 学习中 / 已掌握。中间态也算分，别攒着。<br/>
+      · 每天只要 <b>${settings.daily} 个动作</b>。超额不算绩效，休息也是进度。<br/>
+      · 想改目标，去「我的 → 设置」。
+    </div></div>`;
 }
+/* ============ 地图 ============ */
+function renderMap(){
+  const c=countByStage();
+  const pillarsHtml=PILLARS.map(p=>{
+    const its=ITEMS().filter(x=>x.pillar.id===p.id);
+    let got=0; its.forEach(x=>got+=STAGE_W[stOf(x.id)]);
+    const pc=its.length?Math.round(got/its.length*100):0;
+    const m=its.filter(x=>stOf(x.id)===2).length;
+    return `<button class="pcard" onclick="pickPillar('${p.id}')">
+      <div class="glow" style="background:${p.color}"></div>
+      <div class="pc-ic" style="background:${p.color}">${p.icon}</div>
+      <h3>${p.name}</h3>
+      <div class="pc-sub">${p.sub}</div>
+      <div class="pc-line"><span>掌握 ${m}/${its.length}</span><b>${pc}%</b></div>
+      <div class="bar sm"><i style="width:${pc}%;background:${p.color}"></i></div>
+    </button>`;
+  }).join("");
 
-function renderPillar(pid){
-  const p = PILLARS.find(x=>x.id===pid);
-  const its = pillarItems(pid);
-  const dn = its.filter(x=>isDone(x.id)).length;
-  const pc = its.length? Math.round(dn/its.length*100):0;
-  const q = query.trim().toLowerCase();
+  const list=(mapPillar==="all")?PILLARS:PILLARS.filter(p=>p.id===mapPillar);
+  const q=mapQuery.trim().toLowerCase();
 
-  const groupsHtml = p.groups.map((g, gi)=>{
-    const cards = g.items.map((it, ii)=>{
-      const id = itemId(pid, gi, ii);
-      const done = isDone(id);
-      const st = progress[id] || {};
-      // 过滤
-      if(filter==="todo" && done) return "";
-      if(filter==="done" && !done) return "";
-      if(q){
-        const hay = (it.t+" "+it.d+" "+g.name).toLowerCase();
-        if(!hay.includes(q)) return "";
-      }
-      const tagHtml = g.tag? `<span class="tag">${g.tag}</span>`:"";
-      const whenHtml = it.when? `<span class="when">🗓️ ${esc(it.when)}</span>`:"";
-      const dateHtml = done? `<span class="done-date">✓ ${fmtDate(st.ts)}</span>`:"";
-      const noteHtml = st.note? `<span class="note-flag" title="有笔记">📝</span>`:"";
-      return `<div class="card ${done?'done':''}" style="--pc:${p.color}" data-id="${id}" onclick="toggleItem('${id}')">
-        <div class="check">${done?'✓':''}</div>
-        <div class="c-body">
-          <div class="c-title">${esc(it.t)} ${noteHtml}</div>
-          <div class="c-desc">${esc(it.d)}</div>
-          <div class="c-foot">${tagHtml}${whenHtml}${dateHtml}
-            <button class="note-btn ${st.note?'has':''}" title="学习笔记" onclick="event.stopPropagation();toggleNote('${id}')">📝</button>
+  const groupsHtml=list.map(p=>{
+    const inner=p.groups.map((g,gi)=>{
+      const raw=g.items.map((it,ii)=>{
+        const id=itemId(p.id,gi,ii), s=stOf(id);
+        if(mapFilter==="todo"&&s===2) return "";
+        if(mapFilter==="done"&&s!==2) return "";
+        if(mapFilter==="doing"&&s!==1) return "";
+        if(q){
+          const hay=(it.t+" "+it.d+" "+it.a+" "+it.k+" "+g.name+" "+it.q).toLowerCase();
+          if(hay.indexOf(q)<0) return "";
+        }
+        const pill=s===0?'<span class="pill">未开始</span>'
+                  :s===1?'<span class="pill st1">学习中</span>'
+                         :'<span class="pill st2">已掌握</span>';
+        return `<div class="card ${s===1?'st1':(s===2?'st2':'')}" style="--pc:${p.color}" onclick="openSheet('${id}')">
+          <span class="checkbox ${s===2?'on':(s===1?'st1':'')}" style="--pc:${p.color};margin-top:2px"
+            onclick="event.stopPropagation();cycleStage('${id}')">${s===2?'✓':(s===1?'·':'')}</span>
+          <div class="c-body">
+            <div class="c-title">${esc(it.t)}</div>
+            <div class="c-act">▶ ${esc(it.a)}</div>
+            <div class="c-foot">${pill}<span class="pill">⏱ ${it.m}分</span>
+              ${noteOf(id)?'<span class="pill">📝 笔记</span>':''}</div>
           </div>
-          <div class="note-box ${st._open?'':'hidden'}" id="nb-${id}" onclick="event.stopPropagation()">
-            <textarea placeholder="记录学习笔记 / 心得 / 链接…" oninput="setNote('${id}',this.value)">${esc(st.note||"")}</textarea>
-          </div>
-        </div>
+        </div>`;
+      }).join("");
+      if(!raw) return "";
+      const gd=g.items.filter((_,ii)=>isMastered(itemId(p.id,gi,ii))).length;
+      return `<div class="group">
+        <div class="group-h"><span>${g.icon}</span>${esc(g.name)}<span class="count">${gd}/${g.items.length}</span></div>
+        <div class="cards">${raw}</div>
       </div>`;
     }).join("");
-    const gDone = g.items.filter((_,ii)=>isDone(itemId(pid,gi,ii))).length;
-    if(!cards) return "";
-    return `<div class="group">
-      <div class="group-title"><span class="g-ic">${g.icon}</span>${esc(g.name)}
-        <span class="count">${gDone}/${g.items.length}</span></div>
-      <div class="cards">${cards}</div>
-    </div>`;
+    if(!inner) return "";
+    return `<div class="sect-h" style="margin-top:22px"><span style="color:${p.color}">${p.icon}</span>${p.name}
+      <span class="sh-sub">${p.sub}</span></div>${inner}`;
   }).join("");
 
-  $("#view").innerHTML = `
-    <div class="pillar-head">
-      <div class="pillar-emoji" style="background:${p.color}">${p.icon}</div>
-      <div><h2>${p.name}</h2><p>${p.sub}</p></div>
-      <div class="pillar-prog">
-        <div style="font-size:13px;color:var(--muted)">完成 <b style="color:${p.color}">${dn}</b>/${its.length} · ${pc}%</div>
-        <div class="bar"><i style="width:${pc}%;background:${p.color}"></i></div>
-      </div>
-    </div>
-    <div class="toolbar">
+  $("#view").innerHTML=`
+    ${mapPillar==="all"
+      ? `<div class="sect-h" style="margin-top:10px">🗺️ 三大支柱<span class="sh-sub">点进去看知识点</span></div>
+         <div class="pillars">${pillarsHtml}</div>`
+      : `<button class="btn btn-line btn-sm" style="margin-top:12px" onclick="pickPillar('all')">← 返回三大支柱</button>`}
+
+    <div class="filterbar">
       <div class="search"><span class="ic">🔍</span>
-        <input id="searchInput" placeholder="搜索知识点…" value="${esc(query)}" oninput="onSearch(this.value)"/></div>
-      <div class="chips">
-        <button class="chip ${filter==='all'?'active':''}" onclick="setFilter('all')">全部</button>
-        <button class="chip ${filter==='todo'?'active':''}" onclick="setFilter('todo')">未学</button>
-        <button class="chip ${filter==='done'?'active':''}" onclick="setFilter('done')">已学</button>
+        <input id="mapSearch" placeholder="搜知识点、动作、关键词…" value="${esc(mapQuery)}"
+          oninput="onMapSearch(this.value)"/></div>
+      <div class="seg">
+        <button class="${mapFilter==='all'?'on':''}" onclick="setMapFilter('all')">全部 ${ITEMS().length}</button>
+        <button class="${mapFilter==='doing'?'on':''}" onclick="setMapFilter('doing')">学习中 ${c[1]}</button>
+        <button class="${mapFilter==='done'?'on':''}" onclick="setMapFilter('done')">已掌握 ${c[2]}</button>
+        <button class="${mapFilter==='todo'?'on':''}" onclick="setMapFilter('todo')">未开始 ${c[0]}</button>
       </div>
     </div>
-    ${groupsHtml || `<div class="empty">没有匹配的知识点 🔍</div>`}`;
+    ${groupsHtml||`<div class="empty"><span class="e-ic">🔍</span>没有匹配的知识点，换个词试试</div>`}
+
+    <div class="sect-h">☁️ 视角说明</div>
+    <div class="panel"><div class="note">
+      这张地图是<b>长期刻度</b>，不是待办清单。63 项要按年推进，百分比低是正常的。<br/>
+      它的作用是「不知道学什么的时候来翻」。日常推进请看<b>「今天」</b>。<br/>
+      每张卡片都能看到第一步动作、验收标准和权威入口，点开即用。
+    </div></div>`;
+}
+function pickPillar(p){ mapPillar=p; mapFilter="all"; mapQuery=""; render(); window.scrollTo({top:0,behavior:"smooth"}); }
+function setMapFilter(f){ mapFilter=f; render(); }
+function onMapSearch(v){
+  mapQuery=v; const pos=v.length;
+  renderMap();
+  const i=$("#mapSearch");
+  if(i){ i.focus(); try{ i.setSelectionRange(pos,pos); }catch(e){} }
 }
 
-/* ============ 交互 ============ */
-function toggleItem(id){
-  const cur = progress[id] || {};
-  if(cur.done){ delete progress[id]; }
-  else { progress[id] = { done:true, ts:Date.now(), note:cur.note||"", _open:cur._open||false }; }
-  saveProgress(); render();
+/* ============ 计划 ============ */
+function renderPlan(){
+  const k=weekKey(), w=ensureWeek(k);
+  const prevK=weekKeyOf(-1), prevW=plan.weeks[prevK];
+  const wList=w.items.map(byId).filter(Boolean);
+  const wDone=wList.filter(x=>stOf(x.id)===2).length;
+  const pc=wList.length?Math.round(wDone/wList.length*100):0;
+  const goals=w.goals||[];
+  const prevLeftItems=prevW?prevW.items.filter(id=>stOf(id)<2).length:0;
+  const prevLeftGoals=prevW?(prevW.goals||[]).filter(g=>!g.done).length:0;
+
+  const itemsHtml=wList.length?wList.map(x=>{
+    const s=stOf(x.id);
+    return `<div class="row ${s===2?'done':''}">
+      <span class="checkbox ${s===2?'on':(s===1?'st1':'')}" style="--pc:${x.pillar.color}"
+        onclick="cycleStage('${x.id}')">${s===2?'✓':(s===1?'·':'')}</span>
+      <div class="r-tx" onclick="openSheet('${x.id}')"><span class="r-t">${esc(x.item.t)}</span>
+        <div class="r-sub">${x.pillar.icon} ${esc(x.pillar.name)} · ${STAGE_NAME[s]}</div></div>
+      <button class="row-x" onclick="unplanItem('${x.id}')">✕</button>
+    </div>`;
+  }).join("") : `<div class="empty" style="padding:18px"><span class="e-ic">🎯</span>
+      本周还没排动作。<br/>先排 3 个，比排 30 个有用。</div>`;
+
+  const goalsHtml=goals.length?goals.map(g=>`
+    <div class="row ${g.done?'done':''}">
+      <span class="checkbox ${g.done?'on':''}" onclick="toggleGoal('${esc(g.id)}')">${g.done?'✓':''}</span>
+      <div class="r-tx" style="cursor:default"><span class="r-t">${esc(g.text)}</span></div>
+      <button class="row-x" onclick="delGoal('${esc(g.id)}')">✕</button>
+    </div>`).join("") : `<div class="empty" style="padding:14px">还没有自定义目标</div>`;
+
+  const lastWeeks=Object.keys(plan.weeks)
+    .filter(x=>x.indexOf("old-")<0&&x.indexOf("migrated-")<0&&x!==k)
+    .sort().reverse().slice(0,4);
+
+  $("#view").innerHTML=`
+    <div class="sect-h" style="margin-top:10px">🎯 本周 · ${weekLabel(k)}<span class="sh-sub">周一为一周之始</span></div>
+
+    <div class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:14px;font-weight:700">动作进度</div>
+        <div style="font-size:13px;color:var(--muted)"><b style="color:var(--text)">${wDone}</b>/${wList.length} · ${pc}%</div>
+      </div>
+      <div class="bar" style="margin-bottom:14px"><i style="width:${pc}%;background:linear-gradient(90deg,#6366f1,#ec4899)"></i></div>
+      ${itemsHtml}
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-soft btn-sm" onclick="autoPlanWeek()">✨ 自动排 ${settings.weekly} 个</button>
+        <button class="btn btn-line btn-sm" onclick="goTab('map')">去地图手动挑</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="font-size:14px;font-weight:750;margin-bottom:11px">📝 自定义目标（可选）</div>
+      ${goalsHtml}
+      <div style="display:flex;gap:8px;margin-top:11px">
+        <input class="field" id="goalInput" placeholder="例如：周五前把 RAG demo 发给同事看"
+          onkeydown="if(event.key==='Enter')addGoal()"/>
+        <button class="btn btn-primary btn-sm" onclick="addGoal()">加</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="font-size:14px;font-weight:750;margin-bottom:6px">🔥 本周节奏</div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:7px">
+        <span>有推进的天数 <b style="color:var(--text)">${weekActiveDays()}</b> / 7</span>
+        <span>专注 <b style="color:var(--text)">${minutesThisWeek()}</b> 分钟</span>
+      </div>
+      <div class="bar"><i style="width:${weekActiveDays()/7*100}%;background:${weekActiveDays()>=5?'#10b981':'#f59e0b'}"></i></div>
+      <div class="note" style="margin-top:9px">一周有 5 天动过手，就算合格的一周。</div>
+    </div>
+
+    <div class="sect-h">📖 周复盘</div>
+    <div class="panel">
+      <textarea class="field" id="reflectInput" placeholder="这周实际做了什么？卡在哪？下周要砍掉什么？">${esc(w.reflection||"")}</textarea>
+      <div style="display:flex;gap:9px;align-items:center;margin-top:11px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="doReview()">保存复盘</button>
+        <span style="font-size:12px;color:var(--muted)">${w.reviewedAt?"上次复盘 "+dstr(new Date(w.reviewedAt)):"本周还没复盘"}</span>
+      </div>
+    </div>
+
+    ${(prevLeftItems||prevLeftGoals)?`<div class="panel">
+      <div style="font-size:14px;font-weight:750;margin-bottom:9px">📦 上周遗留</div>
+      <div class="note" style="margin-bottom:11px">上周有 ${prevLeftItems} 个动作、${prevLeftGoals} 个目标没完成。</div>
+      <button class="btn btn-soft btn-sm" onclick="rollover()">滚入本周</button></div>`:""}
+
+    ${lastWeeks.length?`<div class="sect-h">🕘 历史周</div><div class="panel">
+      ${lastWeeks.map(kk=>{
+        const ww=plan.weeks[kk], n=(ww.items||[]).length;
+        const d=(ww.items||[]).filter(id=>stOf(id)===2).length;
+        return `<div class="row"><div class="r-tx" style="cursor:default"><span class="r-t">${weekLabel(kk)}</span>
+          <div class="r-sub">${d}/${n} 完成${ww.reflection?" · 已复盘":""}</div></div></div>`;
+      }).join("")}</div>`:""}`;
 }
-function toggleNote(id){
-  const cur = progress[id] || { done:false, ts:Date.now(), note:"" };
-  cur._open = !cur._open;
-  progress[id] = cur; saveProgress(); renderPillar(activeTab);
-  const ta = document.querySelector("#nb-"+CSS.escape(id)+" textarea"); if(ta) ta.focus();
+
+/* ============ 我的 ============ */
+function renderMe(){
+  const c=countByStage();
+  const totalMin=sessions.reduce((a,b)=>a+(b.min||0),0);
+  const pct=weightedPct();
+  const tok=getSyncToken();
+  $("#view").innerHTML=`
+    <div class="sect-h" style="margin-top:10px">📊 累计数据</div>
+    <div class="stats">
+      <div class="stat"><span class="s-ic">✅</span><b>${c[2]}</b><span>已掌握</span></div>
+      <div class="stat"><span class="s-ic">🌱</span><b>${c[1]}</b><span>学习中</span></div>
+      <div class="stat"><span class="s-ic">⏱</span><b>${totalMin}</b><span>累计专注(分)</span></div>
+      <div class="stat"><span class="s-ic">🔥</span><b>${streak()}</b><span>连续天数</span></div>
+    </div>
+    <div class="panel" style="margin-top:12px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+        <span style="color:var(--muted)">体系掌握度（长期刻度，慢慢来）</span><b>${pct}%</b></div>
+      <div class="bar"><i style="width:${pct}%;background:linear-gradient(90deg,#6366f1,#ec4899)"></i></div>
+      <div class="note" style="margin-top:10px">
+        最长连续 <b>${longestStreak()}</b> 天 · 累计有推进 <b>${Object.keys(days).length}</b> 天 ·
+        专注记录 <b>${sessions.length}</b> 次 · 今日专注 <b>${minutesOn(todayKey())}</b> 分钟
+      </div>
+    </div>
+
+    <div class="sect-h">⚙️ 设置</div>
+    <div class="panel">
+      <div style="font-size:13.5px;font-weight:700;margin-bottom:8px">每日目标动作数</div>
+      <div class="radios">${[1,2,3].map(n=>`<button class="${settings.daily===n?'on':''}" onclick="setSetting('daily',${n})">${n} 个</button>`).join("")}</div>
+      <div style="font-size:13.5px;font-weight:700;margin:15px 0 8px">每周计划动作数</div>
+      <div class="radios">${[2,3,5,8].map(n=>`<button class="${settings.weekly===n?'on':''}" onclick="setSetting('weekly',${n})">${n} 个</button>`).join("")}</div>
+      <div style="font-size:13.5px;font-weight:700;margin:15px 0 8px">单次专注时长</div>
+      <div class="radios">${[15,25,45,60].map(n=>`<button class="${settings.focus===n?'on':''}" onclick="setSetting('focus',${n})">${n} 分钟</button>`).join("")}</div>
+      <div class="note" style="margin-top:8px">建议保持 1 个动作 / 25 分钟。门槛低到你没有理由拒绝，才是能坚持的设计。</div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-line btn-sm" onclick="toggleTheme()">🌗 深浅色</button>
+        <button class="btn btn-line btn-sm" onclick="exportData()">⬇️ 导出备份</button>
+        <button class="btn btn-line btn-sm" onclick="document.getElementById('fileInput').click()">⬆️ 导入</button>
+        <button class="btn btn-line btn-sm" onclick="enableNotify()">🔔 完成提醒</button>
+      </div>
+    </div>
+
+    <details class="acc" style="margin-top:12px">
+      <summary>☁️ 多端云同步<span style="margin-left:auto;font-size:11.5px;font-weight:600;color:var(--muted)">${tok?"已配置":"未配置 · 可选"}</span></summary>
+      <div class="acc-body">
+        <div class="note" style="margin-bottom:12px">
+          数据默认存在<b>本设备浏览器</b>，不配置也能正常用。<br/>
+          想在手机和 iPad 之间自动同步，再配这个（可选）。
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input class="field" type="password" id="syncToken"
+            placeholder="${tok?"已配置（重新粘贴可更新）":"粘贴 GitHub Fine-grained PAT"}" value="${esc(tok)}"/>
+          <button class="btn btn-primary btn-sm" onclick="saveSyncToken()">保存</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="btn btn-line btn-sm" onclick="doSyncPull()">⬇ 下载云端</button>
+          <button class="btn btn-line btn-sm" onclick="doSyncPush()">⬆ 上传本地</button>
+          <button class="btn btn-line btn-sm" onclick="toggleSyncAuto()">自动同步：${isSyncAuto()?"开":"关"}</button>
+        </div>
+        <div class="note" id="syncStatus">${tok?"已配置，改动会自动同步。":"未配置 Token。"}</div>
+        <div class="note" style="margin-top:10px">
+          存于私有仓库 <b>${SYNC_OWNER}/${SYNC_REPO}</b>，仅你可见；Token 只存本机。<br/>
+          建 Token：GitHub → Settings → Developer settings → Fine-grained tokens →
+          只选仓库 <b>${SYNC_REPO}</b> → 权限 <b>Contents: Read and write</b>。
+        </div>
+      </div>
+    </details>
+
+    <div class="panel" style="margin-top:12px">
+      <button class="btn btn-line btn-sm btn-block" style="color:#dc2626" onclick="resetAll()">🗑️ 清空全部数据</button>
+    </div>
+
+    <div class="note" style="text-align:center;margin-top:20px">
+      AI 产品经理知识体系 · v2<br/>把「学到哪了」换成「今天做了什么」
+    </div>`;
 }
-function setNote(id, val){
-  const cur = progress[id] || { done:false, ts:Date.now() };
-  cur.note = val; progress[id] = cur; saveProgress();
-  const btn = document.querySelector(`.card[data-id="${id}"] .note-btn`); if(btn) btn.classList.toggle("has", !!val);
+
+/* ============ 路由 ============ */
+function render(){
+  renderNav();
+  if(activeTab==="today") renderToday();
+  else if(activeTab==="map") renderMap();
+  else if(activeTab==="plan") renderPlan();
+  else renderMe();
+  tickTimer();
 }
-function setFilter(f){ filter=f; renderPillar(activeTab); }
-function onSearch(v){ query=v; const pos=v.length; renderPillar(activeTab);
-  const inp=$("#searchInput"); if(inp){ inp.focus(); try{inp.setSelectionRange(pos,pos);}catch(e){} } }
-function goTab(tab){ activeTab=tab; filter="all"; query="";
-  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
-  render(); window.scrollTo({top:0,behavior:"smooth"}); }
+function goTab(t){
+  activeTab=t; swapIdx=0;
+  if(t!=="map") mapQuery="";
+  render(); window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ============ 抽屉 ============ */
+let sheetId=null;
+function openSheet(id,keep){
+  const x=byId(id); if(!x) return;
+  sheetId=id;
+  const s=stOf(id), it=x.item;
+  const q=encodeURIComponent(it.q), sq=encodeURIComponent(it.s);
+  const isTimer=timer&&timer.id===id;
+  $("#sheet").innerHTML=`
+    <div class="grabber"></div>
+    <div class="sheet-h">
+      <div class="sh-ic" style="background:${x.pillar.color}">${x.pillar.icon}</div>
+      <div><h2>${esc(it.t)}</h2><div class="sh-crumb">${esc(x.pillar.name)} · ${esc(x.group.name)}</div></div>
+      <button class="close-x" onclick="closeSheet()">✕</button>
+    </div>
+
+    <div class="stage-grid">
+      ${[0,1,2].map(k=>`<button class="stage-btn ${s===k?'on':''}" data-st="${k}" onclick="setStage('${id}',${k})">
+        <span class="sb-ic">${["○","◐","✓"][k]}</span>${STAGE_NAME[k]}</button>`).join("")}
+    </div>
+
+    <div class="action-box" style="margin-bottom:14px">
+      <div class="ab-label">▶ 第一步就做这个</div>
+      <div class="ab-text">${esc(it.a)}</div>
+      <div class="kpi-row"><span class="k-ic">🎯</span>
+        <span class="k-tx">做完的标准：<b>${esc(it.k)}</b></span></div>
+    </div>
+
+    <div class="f-meta">
+      <span class="meta-pill">⏱ 约 ${it.m} 分钟</span>
+      <span class="meta-pill">📚 ${esc(it.s)}</span>
+    </div>
+
+    <div class="link-row">
+      <button class="btn btn-soft btn-sm" onclick="window.open('https://www.bing.com/search?q=${q}','_blank')">🔍 搜索关键词</button>
+      <button class="btn btn-line btn-sm" onclick="window.open('https://www.bing.com/search?q=${sq}','_blank')">📚 打开入口</button>
+      <button class="btn btn-line btn-sm" onclick="addToWeek('${id}')">📌 加入本周</button>
+    </div>
+
+    <div class="timer-card">
+      ${isTimer?`
+        <div class="timer-disp" id="sheetTimerDisp">${fmtClock(remainingMs())}</div>
+        <div class="timer-hint">专注中 · 本次设定 ${timer.min} 分钟</div>
+        <div class="bar sm" style="margin-bottom:13px"><i id="sheetTimerBar" style="width:0%;background:linear-gradient(90deg,#6366f1,#ec4899)"></i></div>
+        <div class="timer-opts">
+          <button onclick="stopTimer()">■ 结束并记录</button>
+          <button onclick="stopTimer(true)">放弃</button>
+        </div>`
+      :`
+        <div class="timer-disp">${settings.focus}:00</div>
+        <div class="timer-hint">选一个时长，点开始就去做，别先想</div>
+        <div class="timer-opts">
+          ${[15,25,45].map(n=>`<button class="${n===settings.focus?'on':''}" onclick="startTimer('${id}',${n})">${n} 分钟</button>`).join("")}
+        </div>`}
+    </div>
+
+    <div style="margin-top:15px">
+      <div class="ab-label" style="color:var(--muted)">📝 学习笔记</div>
+      <textarea class="field" id="noteField" placeholder="记下你查到的链接、踩的坑、还没想通的点…"
+        oninput="onNote('${id}',this.value)">${esc(noteOf(id))}</textarea>
+    </div>`;
+  const w=$("#sheetWrap");
+  if(!keep){
+    w.classList.add("open");
+    requestAnimationFrame(()=>w.classList.add("in"));
+    document.body.style.overflow="hidden";
+  }
+}
+function closeSheet(){
+  const w=$("#sheetWrap");
+  w.classList.remove("in"); document.body.style.overflow="";
+  setTimeout(()=>{ w.classList.remove("open"); sheetId=null; },240);
+}
+function openTimerSheet(){
+  if(timer) openSheet(timer.id);
+  else toast("先从焦点卡片开始一个专注吧");
+}
+function onNote(id,v){
+  const p=progress[id]||{st:0,ts:Date.now()};
+  p.note=v; progress[id]=p; saveProgress();
+}
+function setSetting(k,v){ settings[k]=v; saveSettings(); render(); toast("已保存设置"); }
+function enableNotify(){
+  if(!("Notification" in window)){ toast("这个浏览器不支持系统通知"); return; }
+  Notification.requestPermission().then(p=>{
+    toast(p==="granted"?"已开启：计时结束会提醒你 🔔":"已拒绝，可在浏览器设置里改");
+  });
+}
+
+/* ============ 本周操作 ============ */
+function addToWeek(id){
+  const w=curWeek();
+  if(w.items.indexOf(id)>=0){ toast("已经在本周计划里了"); return; }
+  w.items.push(id); savePlan(); render(); toast("已加入本周 📌");
+}
+function unplanItem(id){ const w=curWeek(); w.items=w.items.filter(x=>x!==id); savePlan(); render(); }
+function autoPlanWeek(){
+  const w=curWeek();
+  const pool=candidates().filter(x=>w.items.indexOf(x.id)<0&&stOf(x.id)<2);
+  if(!pool.length){ toast("没有更多可排的动作了"); return; }
+  const add=pool.slice(0,settings.weekly);
+  add.forEach(x=>w.items.push(x.id));
+  savePlan(); render(); toast("已排入 "+add.length+" 个动作 🎯");
+}
+function addGoal(){
+  const i=$("#goalInput"); if(!i) return;
+  const t=i.value.trim(); if(!t) return;
+  curWeek().goals.push({id:"g"+Date.now(),text:t,done:false});
+  savePlan(); render(); toast("已添加");
+}
+function toggleGoal(id){
+  const g=curWeek().goals.filter(x=>x.id===id)[0]; if(!g) return;
+  g.done=!g.done; if(g.done) markedDay();
+  savePlan(); render();
+}
+function delGoal(id){ const w=curWeek(); w.goals=w.goals.filter(x=>x.id!==id); savePlan(); render(); }
+function doReview(){
+  const w=curWeek(), ta=$("#reflectInput");
+  if(ta) w.reflection=ta.value;
+  w.reviewedAt=Date.now(); markedDay(); savePlan(); render(); toast("复盘已保存 📖");
+}
+function rollover(){
+  const prev=plan.weeks[weekKeyOf(-1)];
+  if(!prev){ toast("没有可滚入的内容"); return; }
+  const w=curWeek();
+  prev.items.forEach(id=>{ if(stOf(id)<2&&w.items.indexOf(id)<0) w.items.push(id); });
+  (prev.goals||[]).forEach(g=>{ if(!g.done)
+    w.goals.push({id:"g"+Date.now()+Math.random().toString(16).slice(2),text:g.text,done:false}); });
+  prev.rolledAt=Date.now(); savePlan(); render(); toast("已滚入本周 📦");
+}
+function dismissRollover(){
+  const prev=plan.weeks[weekKeyOf(-1)];
+  if(prev){ prev.rolledAt=Date.now(); savePlan(); render(); }
+}
 
 /* ============ 导入导出 / 主题 / 重置 ============ */
 function exportData(){
-  const blob = new Blob([JSON.stringify(progress,null,2)], {type:"application/json"});
-  const a = document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download="ai-pm-progress-"+new Date().toISOString().slice(0,10)+".json"; a.click();
-  URL.revokeObjectURL(a.href); toast("进度已导出 ⬇️");
+  const payload={v:2,exportedAt:Date.now(),progress:progress,plan:plan,days:days,sessions:sessions,settings:settings};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="ai-pm-progress-"+todayKey()+".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast("已导出备份 ⬇️");
 }
 function importData(file){
-  const r = new FileReader();
-  r.onload = e => { try{ const d=JSON.parse(e.target.result); if(typeof d!=="object") throw 0;
-      progress=d; saveProgress(); render(); toast("进度已导入 ⬆️"); }catch(err){ toast("文件格式错误 ❌"); } };
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(d&&d.progress){
+        progress=d.progress||{}; plan=d.plan||{weeks:{}};
+        days=d.days||{}; sessions=d.sessions||[];
+        if(d.settings) settings=Object.assign(settings,d.settings);
+      }else if(d&&typeof d==="object"){
+        progress={};
+        Object.keys(d).forEach(k=>{ const p=d[k]||{};
+          progress[k]={st:p.done?2:(p.st||0),ts:p.ts||Date.now(),note:p.note||""}; });
+      }else throw 0;
+      saveProgress(true); savePlan(); saveDays(); saveSessions(); saveSettings();
+      render(); toast("已导入 ⬆️");
+    }catch(err){ toast("文件格式不对 ❌"); }
+  };
   r.readAsText(file);
 }
-function resetAll(){ if(confirm("确定清空所有打卡与笔记？此操作不可撤销。")){ progress={}; saveProgress(); render(); toast("已重置 🗑️"); } }
+function resetAll(){
+  if(!confirm("清空所有进度、笔记、计划与专注记录？此操作不可撤销。")) return;
+  progress={}; plan={weeks:{}}; days={}; sessions=[]; timer=null;
+  saveProgress(true); savePlan(); saveDays(); saveSessions(); saveTimer();
+  render(); toast("已清空 🗑️");
+}
+function setThemeIcon(t){
+  const ic=t==="dark"?"☀️":"🌙";
+  $$(".theme-btn").forEach(b=>{
+    const s=b.querySelector(".rn-ic");
+    if(s) s.textContent=ic; else b.textContent=ic;
+  });
+}
 function toggleTheme(){
-  const cur = document.documentElement.getAttribute("data-theme");
-  const nxt = cur==="dark"?"light":"dark";
-  document.documentElement.setAttribute("data-theme", nxt);
-  localStorage.setItem(THEME_KEY, nxt);
-  $("#themeBtn").textContent = nxt==="dark"?"☀️":"🌙";
+  const cur=document.documentElement.getAttribute("data-theme");
+  const nxt=cur==="dark"?"light":"dark";
+  document.documentElement.setAttribute("data-theme",nxt);
+  localStorage.setItem(THEME_KEY,nxt);
+  setThemeIcon(nxt);
 }
 
-/* ============ 云同步 (GitHub 私有仓库) ============ */
+/* ============ 云同步（可选） ============ */
 const SYNC_OWNER="KaraChenDS", SYNC_REPO="ai-pm-progress", SYNC_PATH="progress.json";
 const SYNC_TOKEN_KEY="aippm_sync_token", SYNC_AUTO_KEY="aippm_sync_auto";
 let pushTimer=null;
 function getSyncToken(){ return localStorage.getItem(SYNC_TOKEN_KEY)||""; }
 function isSyncAuto(){ return localStorage.getItem(SYNC_AUTO_KEY)!=="0"; }
 function syncApiUrl(){ return "https://api.github.com/repos/"+SYNC_OWNER+"/"+SYNC_REPO+"/contents/"+SYNC_PATH; }
-function syncHeaders(tok){ return {Authorization:"Bearer "+tok, Accept:"application/vnd.github+json"}; }
-function encodeB64(str){ return btoa(unescape(encodeURIComponent(str))); }
-function decodeB64(b64){ return decodeURIComponent(escape(atob(b64.replace(/\s/g,"")))); }
-function updateSyncStatus(msg){ const el=document.getElementById("syncStatus"); if(el) el.textContent=msg; }
-function mergeProgress(local, remote){
-  const out={}; const ids=new Set([...Object.keys(local),...Object.keys(remote)]);
-  ids.forEach(id=>{ const a=local[id], b=remote[id];
-    out[id] = (a&&b) ? (((b.ts||0)>(a.ts||0))?b:a) : (a||b); });
+function syncHeaders(t){ return {Authorization:"Bearer "+t,Accept:"application/vnd.github+json"}; }
+function encodeB64(s){ return btoa(unescape(encodeURIComponent(s))); }
+function decodeB64(b){ return decodeURIComponent(escape(atob(b.replace(/\s/g,"")))); }
+function updateSyncStatus(m){ const el=$("#syncStatus"); if(el) el.textContent=m; }
+function mergeProgress(a,b){
+  a=a||{}; b=b||{};
+  const out={}, ids={};
+  Object.keys(a).forEach(k=>ids[k]=1); Object.keys(b).forEach(k=>ids[k]=1);
+  Object.keys(ids).forEach(id=>{
+    const x=a[id], y=b[id];
+    if(!x){ out[id]=y; return; }
+    if(!y){ out[id]=x; return; }
+    const nw=(y.ts||0)>(x.ts||0)?y:x, od=(nw===x)?y:x;
+    out[id]={st:nw.st,ts:nw.ts,note:((nw.note||"").length>=(od.note||"").length?(nw.note||""):(od.note||""))};
+  });
   return out;
 }
 async function syncPull(){
-  const tok=getSyncToken(); if(!tok){ updateSyncStatus("未配置 Token，请先粘贴并保存。"); return; }
-  updateSyncStatus("正在下载云端进度…");
+  const tok=getSyncToken(); if(!tok){ updateSyncStatus("未配置 Token。"); return; }
+  updateSyncStatus("正在下载…");
   try{
-    const r=await fetch(syncApiUrl(), {headers:syncHeaders(tok)});
-    if(r.status===404){ updateSyncStatus("云端暂无数据，点「上传本地」即可创建。"); return; }
+    const r=await fetch(syncApiUrl(),{headers:syncHeaders(tok)});
+    if(r.status===404){ updateSyncStatus("云端暂无数据，点「上传本地」创建。"); return; }
     if(!r.ok){ updateSyncStatus("下载失败 HTTP "+r.status+"（检查 Token 权限）"); return; }
     const j=await r.json();
     const remote=JSON.parse(decodeB64(j.content));
-    progress=mergeProgress(progress, remote.data||remote);
-    if(remote.plan && (remote.plan._updatedAt||0)>(planState._updatedAt||0)){ planState=remote.plan; localStorage.setItem(PLAN_KEY, JSON.stringify(planState)); }
-    localStorage.setItem(STORE_KEY, JSON.stringify(progress));
-    render(); updateSyncStatus("已下载并合并云端进度 ✓");
+    progress=mergeProgress(progress, remote.progress||remote.data||remote);
+    if(remote.plan) plan=Object.assign({weeks:{}},plan,remote.plan);
+    if(remote.days) days=Object.assign({},days,remote.days);
+    if(remote.settings) settings=Object.assign(settings,remote.settings);
+    saveProgress(true); savePlan(); saveDays(); saveSettings();
+    render(); updateSyncStatus("已下载并合并 ✓");
   }catch(e){ updateSyncStatus("下载出错："+e.message); }
 }
 async function syncPush(){
-  const tok=getSyncToken(); if(!tok){ updateSyncStatus("未配置 Token，请先粘贴并保存。"); return; }
+  const tok=getSyncToken(); if(!tok){ updateSyncStatus("未配置 Token。"); return; }
   updateSyncStatus("正在上传…");
   try{
     let sha=null;
-    const g=await fetch(syncApiUrl(), {headers:syncHeaders(tok)});
-    if(g.ok){ sha=(await g.json()).sha; }
-    const body={ message:"sync: update progress", content:encodeB64(JSON.stringify({updatedAt:Date.now(), data:progress, plan:planState})) };
+    const g=await fetch(syncApiUrl(),{headers:syncHeaders(tok)});
+    if(g.ok) sha=(await g.json()).sha;
+    const payload=JSON.stringify({v:2,updatedAt:Date.now(),progress:progress,plan:plan,days:days,settings:settings});
+    const body={message:"sync: progress",content:encodeB64(payload)};
     if(sha) body.sha=sha;
-    const r=await fetch(syncApiUrl(), {method:"PUT",
-      headers:Object.assign({"Content-Type":"application/json"}, syncHeaders(tok)),
-      body:JSON.stringify(body)});
-    if(r.ok){ updateSyncStatus("已上传到云端 ✓"); }
+    const r=await fetch(syncApiUrl(),{method:"PUT",
+      headers:Object.assign({"Content-Type":"application/json"},syncHeaders(tok)),body:JSON.stringify(body)});
+    if(r.ok) updateSyncStatus("已上传云端 ✓");
     else{ const e=await r.json().catch(()=>({})); updateSyncStatus("上传失败 HTTP "+r.status+" "+(e.message||"")); }
   }catch(e){ updateSyncStatus("上传出错："+e.message); }
 }
 function schedulePush(){
-  if(!getSyncToken() || !isSyncAuto()) return;
-  clearTimeout(pushTimer); pushTimer=setTimeout(syncPush, 1500);
+  if(!getSyncToken()||!isSyncAuto()) return;
+  clearTimeout(pushTimer); pushTimer=setTimeout(syncPush,1800);
 }
 function saveSyncToken(){
-  const v=document.getElementById("syncToken").value.trim();
-  if(v){ localStorage.setItem(SYNC_TOKEN_KEY, v); updateSyncStatus("Token 已保存，正在拉取云端…"); syncPull(); }
-  else{ localStorage.removeItem(SYNC_TOKEN_KEY); updateSyncStatus("Token 已清除。"); }
+  const el=$("#syncToken"), val=el?el.value.trim():"";
+  if(val){ localStorage.setItem(SYNC_TOKEN_KEY,val); syncPull(); toast("已保存 Token"); }
+  else{ localStorage.removeItem(SYNC_TOKEN_KEY); toast("Token 已清除"); }
   render();
 }
-function toggleSyncAuto(){ localStorage.setItem(SYNC_AUTO_KEY, isSyncAuto()?"0":"1"); render(); }
+function toggleSyncAuto(){ localStorage.setItem(SYNC_AUTO_KEY,isSyncAuto()?"0":"1"); render(); }
 function doSyncPull(){ syncPull(); }
 function doSyncPush(){ syncPush(); }
-function syncPanelHtml(){
-  const tok=getSyncToken();
-  return `<div class="panel">
-    <h3>☁️ 多端云同步</h3>
-    <div class="sync-row">
-      <input type="password" id="syncToken" placeholder="${tok?"已配置 Token（重新粘贴可更新）":"粘贴 GitHub Fine-grained PAT"}" value="${esc(tok)}"/>
-      <button class="go-btn" onclick="saveSyncToken()">保存</button>
-    </div>
-    <div class="sync-actions">
-      <button class="chip" onclick="doSyncPull()">⬇ 下载云端</button>
-      <button class="chip" onclick="doSyncPush()">⬆ 上传本地</button>
-      <button class="chip" onclick="toggleSyncAuto()">自动同步：${isSyncAuto()?"开":"关"}</button>
-    </div>
-    <div class="sync-status" id="syncStatus">${tok?"已配置 Token，改动将自动同步。":"未配置 Token。"}</div>
-    <div class="tips">数据存于<b>私有仓库</b> ${SYNC_OWNER}/${SYNC_REPO}，仅你可见；Token 只存本机浏览器。<br/>
-      创建 Token：GitHub → Settings → Developer settings → Fine-grained tokens → 仅选仓库 <b>${SYNC_REPO}</b> → 权限 <b>Contents: Read and write</b>。</div>
-  </div>`;
-}
-
-/* ============ 冲刺 / OKR 计划 ============ */
-const PLAN_KEY="aippm_plan_v1";
-let planState={ sprint:null, weeks:{} };
-function loadPlan(){ try{ planState=JSON.parse(localStorage.getItem(PLAN_KEY))||{sprint:null,weeks:{}}; }catch(e){ planState={sprint:null,weeks:{}}; } }
-function savePlan(){ planState._updatedAt=Date.now(); localStorage.setItem(PLAN_KEY, JSON.stringify(planState)); schedulePush(); }
-function weekIndexNow(){
-  if(!planState.sprint||!planState.sprint.start) return 1;
-  const start=new Date(planState.sprint.start+"T00:00:00").getTime();
-  const idx=Math.floor((Date.now()-start)/(7*864e5))+1;
-  const max=planState.sprint.weeks||4;
-  return Math.min(Math.max(idx,1),max);
-}
-function weekStartISO(wi){ return new Date(new Date(planState.sprint.start+"T00:00:00").getTime()+(wi-1)*7*864e5); }
-function ensureWeek(wi){ if(!planState.weeks[wi]) planState.weeks[wi]={goals:[],reflection:"",reviewedAt:null}; return planState.weeks[wi]; }
-function habitDaysThisWeek(){
-  const ws=weekStartISO(weekIndexNow()).getTime(), we=ws+7*864e5, days=new Set();
-  Object.values(progress).forEach(pp=>{ if(pp.done&&pp.ts>=ws&&pp.ts<we) days.add(new Date(pp.ts).toDateString()); });
-  return days.size;
-}
-function reviewDue(){
-  const wi=weekIndexNow(); if(wi<=1) return false;
-  const prev=planState.weeks[wi-1];
-  return !(prev&&prev.reviewedAt);
-}
-function saveSprintForm(){
-  const name=document.getElementById("spName").value.trim()||"我的冲刺";
-  const start=document.getElementById("spStart").value||new Date().toISOString().slice(0,10);
-  const weeks=parseInt(document.getElementById("spWeeks").value,10)||4;
-  const focus=document.getElementById("spFocus").value.trim();
-  planState.sprint={name,start,weeks,focus};
-  savePlan(); render(); toast("冲刺已保存 🎯");
-}
-function addGoal(){
-  const inp=document.getElementById("goalInput"); const t=inp.value.trim(); if(!t) return;
-  ensureWeek(weekIndexNow()).goals.push({id:"g"+Date.now(),text:t,done:false});
-  inp.value=""; savePlan(); render();
-}
-function toggleGoal(id){
-  const g=ensureWeek(weekIndexNow()).goals.find(x=>x.id===id);
-  if(g){ g.done=!g.done; savePlan(); render(); }
-}
-function delGoal(id){
-  const wk=ensureWeek(weekIndexNow()); wk.goals=wk.goals.filter(x=>x.id!==id); savePlan(); render();
-}
-function doReview(){
-  const wi=weekIndexNow(), wk=ensureWeek(wi);
-  const ta=document.getElementById("reflectInput");
-  wk.reflection=ta?ta.value:wk.reflection; wk.reviewedAt=Date.now();
-  const undone=wk.goals.filter(g=>!g.done).map(g=>g.text);
-  if(undone.length){ const nw=ensureWeek(wi+1); undone.forEach(t=>nw.goals.push({id:"g"+Date.now()+Math.random().toString(16).slice(2),text:t,done:false})); }
-  savePlan(); render(); toast("周复盘完成 ✅ 未完成目标已滚入下周");
-}
-function sprintFormHtml(sp){
-  const today=new Date().toISOString().slice(0,10);
-  return `<div class="sync-row"><input id="spName" placeholder="冲刺名称" value="${esc(sp?sp.name:"")}"/></div>
-    <div class="sync-row"><input id="spFocus" placeholder="聚焦方向（如：大模型与生成式 AI）" value="${esc(sp?sp.focus:"")}"/></div>
-    <div class="sync-row"><input type="date" id="spStart" value="${esc(sp?sp.start:today)}"/><input type="number" id="spWeeks" min="1" max="12" value="${sp?sp.weeks:2}" style="max-width:90px"/></div>
-    <button class="go-btn" onclick="saveSprintForm()">保存冲刺</button>`;
-}
-function renderSprint(){
-  if(!planState.sprint){
-    $("#view").innerHTML=`<div class="panel">
-      <h3>🎯 创建你的第一个冲刺</h3>
-      <div class="tips" style="margin-bottom:12px">建议 2–4 周一个冲刺，聚焦一个知识组（如「大模型与生成式 AI」）。</div>
-      ${sprintFormHtml(null)}
-    </div>`;
-    return;
-  }
-  const sp=planState.sprint, wi=weekIndexNow(), wk=ensureWeek(wi), habit=habitDaysThisWeek(), due=reviewDue();
-  const goalsHtml=wk.goals.length? wk.goals.map(g=>`<div class="goal-row ${g.done?'done':''}">
-      <span class="check" onclick="toggleGoal('${g.id}')">${g.done?'✓':''}</span>
-      <span class="g-text">${esc(g.text)}</span>
-      <button class="note-btn" title="删除" onclick="delGoal('${g.id}')">✕</button>
-    </div>`).join("") : `<div class="empty">本周还没有目标，加 3 个吧 ✍️</div>`;
-  $("#view").innerHTML=`
-    <div class="pillar-head">
-      <div class="pillar-emoji" style="background:#f59e0b">🎯</div>
-      <div><h2>${esc(sp.name)}</h2><p>${esc(sp.focus||"")}</p></div>
-      <div class="pillar-prog">
-        <div style="font-size:13px;color:var(--muted)">第 <b style="color:#f59e0b">${wi}</b> / ${sp.weeks} 周 · 始于 ${esc(sp.start)}</div>
-        <div class="bar"><i style="width:${Math.round(wi/sp.weeks*100)}%;background:#f59e0b"></i></div>
-      </div>
-    </div>
-    ${due?`<div class="banner">📅 上周还没复盘！写下反思并把未完成目标滚入本周。<button class="go-btn" onclick="document.getElementById('reflectBox').scrollIntoView({behavior:'smooth'})">去复盘</button></div>`:""}
-    <div class="panel">
-      <h3>✅ 本周目标（OKR · 建议 3 个）</h3>
-      ${goalsHtml}
-      <div class="sync-row" style="margin-top:10px">
-        <input id="goalInput" placeholder="输入一个本周目标，回车添加…" onkeydown="if(event.key==='Enter')addGoal()"/>
-        <button class="go-btn" onclick="addGoal()">添加</button>
-      </div>
-    </div>
-    <div class="panel">
-      <h3>🔥 习惯 KPI · 本周打卡</h3>
-      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px"><span>目标 ≥5 天</span><b style="color:var(--text)">${habit} / 5 天</b></div>
-      <div class="bar"><i style="width:${Math.min(habit/5*100,100)}%;background:${habit>=5?'#10b981':'#f59e0b'}"></i></div>
-    </div>
-    <div class="panel" id="reflectBox">
-      <h3>📝 周复盘（本周结束时填写）</h3>
-      <div class="note-box" style="margin:0"><textarea id="reflectInput" placeholder="本周学到什么？卡在哪？下周怎么调整？">${esc(wk.reflection||"")}</textarea></div>
-      <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-        <button class="go-btn" onclick="doReview()">完成复盘并滚入下周</button>
-        <span style="font-size:12px;color:var(--muted)">${wk.reviewedAt?"已复盘 "+fmtDate(wk.reviewedAt):"尚未复盘"}</span>
-      </div>
-    </div>
-    <div class="panel">
-      <h3>⚙️ 冲刺设置</h3>
-      ${sprintFormHtml(sp)}
-    </div>`;
-}
 
 /* ============ 启动 ============ */
-document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>goTab(b.dataset.tab)));
-$("#themeBtn").onclick=toggleTheme;
-$("#exportBtn").onclick=exportData;
-$("#importBtn").onclick=()=>$("#fileInput").click();
-$("#fileInput").onchange=e=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=""; };
-$("#resetBtn").onclick=resetAll;
-
+function bindStatic(){
+  $$(".theme-btn").forEach(b=>{ b.onclick=toggleTheme; });
+  $("#fileInput").onchange=e=>{ if(e.target.files[0]) importData(e.target.files[0]); e.target.value=""; };
+  window.addEventListener("scroll",()=>{
+    const b=$("#appbar"); if(b) b.classList.toggle("stuck",window.scrollY>4);
+  },{passive:true});
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeSheet(); });
+}
 (function init(){
-  const savedTheme = localStorage.getItem(THEME_KEY) || (window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
-  document.documentElement.setAttribute("data-theme", savedTheme);
-  $("#themeBtn").textContent = savedTheme==="dark"?"☀️":"🌙";
-  loadProgress(); loadPlan(); render();
-  if(reviewDue()) setTimeout(()=>toast("📅 新的一周：记得做周复盘"),600);
+  const saved=localStorage.getItem(THEME_KEY)||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+  document.documentElement.setAttribute("data-theme",saved);
+  setThemeIcon(saved);
+  loadAll(); bindStatic(); render(); tickLoop();
+  if(timer&&remainingMs()<=0) finishTimer();
+  if("serviceWorker" in navigator){
+    try{ navigator.serviceWorker.register("sw.js").catch(()=>{}); }catch(e){}
+  }
   if(getSyncToken()) syncPull();
 })();
 </script>
