@@ -354,6 +354,58 @@ phase('深浅色切换', null, function(w){
   ];
 });
 
+/* 10.5 「为什么是它」推荐依据说明 */
+var stripTags=function(s){ return String(s).replace(/<[^>]+>/g,''); };
+
+phase('推荐依据说明 · 默认', {'aippm_settings_v1':JSON.stringify({focus:25,focusGroups:[],pathMode:true})}, function(w){
+  w.goTab('today');
+  var html=w.document.body.innerHTML, f=w.currentFocus(), why=stripTags(w.whyFocus(f));
+  return [
+    ['今天页显示「为什么是它」', html.indexOf('为什么是它')>=0],
+    ['说明了前置状态', why.indexOf('前置')>=0],
+    ['说明了时长与预算的关系', why.indexOf('分钟')>=0],
+    ['标注了在待推进项里的名次', why.indexOf('排第')>=0],
+    ['没有未满足前置时，不会瞎说有前置', why.indexOf('还有前置没开始')<0]
+  ];
+});
+
+phase('推荐依据说明 · 聚焦生效', {'aippm_settings_v1':JSON.stringify({focus:25,focusGroups:['hard-2'],pathMode:true})}, function(w){
+  var f=w.currentFocus(), why=stripTags(w.whyFocus(f));
+  return [
+    ['聚焦推上来的项确实属于该方向', w.groupId(f)==='hard-2'],
+    ['说明里点名了聚焦方向', why.indexOf('聚焦方向')>=0]
+  ];
+});
+
+phase('推荐依据说明 · 时长超预算', {'aippm_settings_v1':JSON.stringify({focus:60,focusGroups:['hard-2'],pathMode:true})}, function(w){
+  var f=w.currentFocus(), why=stripTags(w.whyFocus(f));
+  return [
+    ['时间充裕时说明不按时长筛', why.indexOf('时间充裕')>=0],
+    ['同时仍说明聚焦方向（两条理由并存）', why.indexOf('聚焦方向')>=0],
+    ['不再输出「已是最短的一档」这类时长比较', why.indexOf('最短的一档')<0]
+  ];
+});
+
+phase('推荐依据说明 · 依赖未满足时如实说', null, function(w){
+  var c=w.candidates();
+  var blocked=c.filter(function(x){ return w.blockedBy(x).length>0; })[0];
+  var why=stripTags(w.whyFocus(blocked));
+  return [
+    ['存在被前置卡住的项', !!blocked],
+    ['说明里如实点名「还有前置没开始」', why.indexOf('还有前置没开始')>=0],
+    ['并写出了具体缺哪一项', /还有前置没开始：[^·]+/.test(why)]
+  ];
+});
+
+phase('推荐依据说明 · 已开始项', null, function(w){
+  w.setStage('hard-0-0',1);
+  var f=w.currentFocus(), why=stripTags(w.whyFocus(f));
+  return [
+    ['焦点仍是刚推进的那一项', f.id==='hard-0-0'],
+    ['说明为「你已经开始了这一项」', why.indexOf('你已经开始了这一项')>=0]
+  ];
+});
+
 /* 11. 横向溢出（390px 真实宽度 · 逐个视图扫描） */
 phase('390px 无横向溢出', null, function(w){
   // 只统计「真的会撑破页面」的元素：被祖先 overflow:hidden/auto 裁剪的不算

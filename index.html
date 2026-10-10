@@ -205,6 +205,12 @@
   .hint-line b{color:var(--text)}
   .hint-line.warn{background:rgba(245,158,11,.13);color:#b45309}
   [data-theme="dark"] .hint-line.warn{color:#fbbf24}
+  /* 「为什么是它」——把推荐依据摊开给你看 */
+  .why{display:flex;gap:7px;align-items:flex-start;font-size:12.5px;color:var(--muted);
+    line-height:1.62;margin:0 0 12px}
+  .why .wy-ic{flex:0 0 auto;font-size:13px;margin-top:1px}
+  .why b{color:var(--text);font-weight:700}
+  .why .wy-meta{display:block;color:var(--muted);opacity:.85;margin-top:3px}
 
   /* ============ 进度条 / 统计 ============ */
   .bar{height:9px;border-radius:6px;background:var(--ring-track);overflow:hidden}
@@ -1063,7 +1069,57 @@ function candidates(){
   }));
   ranked.sort((a,b)=> (b.key-a.key) || (a.i-b.i));
 
-  return doing.concat(ranked.map(r=>r.x));
+  const out=doing.concat(ranked.map(r=>r.x));
+
+  /* 记录排序依据，供「为什么是它」使用（避免解释和实际排序逻辑各写一份而漂移） */
+  const tieCnt={}, keyOf={}, idxOf={};
+  ranked.forEach((r,i)=>{ tieCnt[r.key]=(tieCnt[r.key]||0)+1; keyOf[r.x.id]=r.key; idxOf[r.x.id]=i; });
+  _rank={};
+  out.forEach((x,pos)=>{
+    _rank[x.id]={ pos:pos+1, of:out.length,
+      doing:stOf(x.id)===1,
+      key:(keyOf[x.id]==null?0:keyOf[x.id]),
+      tie:(tieCnt[keyOf[x.id]]||1),
+      rrIndex:(idxOf[x.id]==null?-1:idxOf[x.id]) };
+  });
+  return out;
+}
+/* 排序依据的缓存：id -> {pos, of, doing, key, tie, rrIndex} */
+let _rank={};
+/* 「为什么是它」：把四层权重摊开成一句人话 */
+function whyFocus(x){
+  if(!x) return "";
+  const budget=settings.focus;
+  const rk=_rank[x.id]||{pos:1,of:1,doing:false,tie:1};
+  const r=[];
+  if(rk.doing){
+    r.push("你已经开始了这一项，做完比开新的更划算");
+  }else{
+    const miss=blockedBy(x), pre=PREREQ[x.id]||[];
+    if(miss.length){
+      r.push("还有前置没开始：<b>"+esc(miss.map(p=>p.item.t).join("、"))+"</b>");
+    }else{
+      r.push(pre.length
+        ? "前置已就绪（"+esc(pre.map(id=>{const p=byId(id);return p?p.item.t:"";}).join("、"))+"）"
+        : "这项没有前置，可以直接开始");
+    }
+  }
+  if(!rk.doing && (settings.focusGroups||[]).indexOf(groupId(x))>=0)
+    r.push("属于你的聚焦方向「<b>"+esc(groupShort(groupId(x)))+"</b>」");
+  if(!rk.doing && curWeek().items.indexOf(x.id)>=0)
+    r.push("你已把它排进本周");
+  if(!rk.doing && budget<60){
+    const m=x.item.m;
+    if(m<=budget)         r.push("约 "+m+" 分钟，在你的 "+budget+" 分钟预算内");
+    else if(m<=budget+15) r.push("约 "+m+" 分钟，比 "+budget+" 分钟略长，但已是最短的一档");
+    /* 明显超预算的不在这里重复说明 —— 卡片下方已有「先做 N 分钟也算推进」的专门提示 */
+  }
+  if(!rk.doing && budget>=60) r.push("你选了「时间充裕」，所以不按时长筛");
+  if(!rk.doing && r.length<=1) r.push("三大支柱轮转轮到「"+esc(x.pillar.name)+"」，避免一直啃同一块");
+  const meta = rk.doing
+    ? "你正在推进的项里，它最近一次动过"
+    : "待推进的 "+rk.of+" 项里排第 "+rk.pos+(rk.tie>1? "，同时满足的有 "+rk.tie+" 项":"");
+  return r.join(" · ")+'<span class="wy-meta">（'+meta+"）</span>";
 }
 function currentFocus(){ const c=candidates(); return c.length?c[swapIdx%c.length]:null; }
 function swapFocus(){ swapIdx++; render(); }
@@ -1228,6 +1284,7 @@ function renderToday(){
         </div>
         <div class="f-title">${esc(focus.item.t)}</div>
         <div class="f-desc">${esc(focus.item.d)}</div>
+        <div class="why"><span class="wy-ic">💡</span><span><b>为什么是它</b>：${whyFocus(focus)}</span></div>
 
         <div class="budget">
           <span class="bg-lb">现在有</span>
