@@ -2081,8 +2081,10 @@ function saveSyncMeta(){ localStorage.setItem(SYNC_META_KEY,JSON.stringify(syncM
 function syncMarkTry(){ syncMeta.lastTry=Date.now(); saveSyncMeta(); paintSyncChip(); }
 function syncMarkOk(msg){ syncMeta.lastOk=Date.now(); syncMeta.lastErr=""; syncMeta.lastMsg=msg||"";
   saveSyncMeta(); paintSyncChip(); }
-function syncMarkErr(err,msg){ syncMeta.lastErr=err||"未知错误"; syncMeta.lastMsg=msg||"";
-  syncMeta.lastTry=Date.now(); saveSyncMeta(); paintSyncChip(); renderSyncBanner(); }
+function syncMarkErr(err,code,msg){ syncMeta.lastErr=err||"未知错误"; syncMeta.lastCode=code||0;
+  syncMeta.lastMsg=msg||""; syncMeta.lastTry=Date.now();
+  saveSyncMeta(); paintSyncChip(); renderSyncBanner(); }
+function syncHint(){ return syncMeta.lastErr ? syncHintFor(syncMeta.lastCode,syncMeta.lastErr) : ""; }
 function agoText(ts){
   if(!ts) return "从未";
   const d=Math.floor((Date.now()-ts)/1000);
@@ -2098,12 +2100,31 @@ function netMsg(e){
     return "连不上 api.github.com —— 网络被限制或需要代理，不是令牌问题";
   return "同步出错："+m;
 }
-function friendlyHttp(code){
+function friendlyHttp(code,ctx){
   if(code===401) return "令牌无效或已过期（HTTP 401）";
   if(code===403) return "权限不足或触发限流（HTTP 403）";
-  if(code===404) return "仓库或文件不存在（HTTP 404）";
+  if(code===404){
+    /* 关键：Fine-grained 令牌若没勾选该仓库，GitHub 返回 404 而不是 403 ——
+       它不告诉你私有仓库是否存在。所以「写」时的 404 几乎总是权限问题。 */
+    return (ctx==="write")
+      ? "令牌看不到这个仓库，写入被拒（HTTP 404）"
+      : "仓库或文件不存在（HTTP 404）";
+  }
   if(code===409) return "与另一台设备同时写入，正在重试（HTTP 409）";
   return "HTTP "+code;
+}
+/* 针对错误码给出「下一步该做什么」，而不是只报一个码 */
+function syncHintFor(code,msg){
+  const s=syncSettings();
+  if(code===404) return "Fine-grained 令牌如果没勾选这个仓库，GitHub 会返回 404 而不是 403。"+
+    "请检查令牌的 Repository access 是否包含 "+s.owner+"/"+s.repo+"，权限是否为 Contents: Read and write。";
+  if(code===401) return "令牌无效或已被吊销。去 GitHub 重新生成一个 Fine-grained PAT。";
+  if(code===403) return "权限不足。确认令牌权限是 Contents: Read and write（只给 Read 会 403），"+
+    "或稍等一会儿（可能是限流）。";
+  if(code===409) return "两台设备同时写入，已自动重试。若持续失败，稍后再手动同步一次。";
+  if(/连不上|网络/.test(msg||"")) return "先用手机 Safari 直接打开 https://api.github.com/ 确认。"+
+    "中国大陆网络下 github.io 能开 ≠ api.github.com 能通，必要时挂代理。";
+  return "点「🩺 诊断」逐环节检查。";
 }
 
 /* ============ 载荷与签名 ============ */
@@ -2269,11 +2290,12 @@ async function syncPull(opts){
       await syncPush(silent,true);
       return;
     }
-    if(!r.ok){ syncMarkErr(friendlyHttp(r.status)); if(!silent) toast(friendlyHttp(r.status)); syncing=false; return; }
+    if(!r.ok){ const m=friendlyHttp(r.status,"read"); syncMarkErr(m,r.status);
+      if(!silent) toast(m); syncing=false; return; }
     const j=await r.json();
     let remote;
     try{ remote=normalizePayload(JSON.parse(b64dec(j.content))); }
-    catch(e){ syncMarkErr("云端文件不是合法 JSON"); syncing=false; return; }
+    catch(e){ syncMarkErr("云端文件不是合法 JSON",0); syncing=false; return; }
     const changed=mergeRemoteState(remote);
     if(changed) render();
     syncMarkOk("已合并云端");
@@ -2283,7 +2305,7 @@ async function syncPull(opts){
     else if(!silent) toast("已是最新 ✓");
   }catch(e){
     syncing=false;
-    syncMarkErr(netMsg(e));
+    syncMarkErr(netMsg(e),0);
     if(!silent) toast(netMsg(e));
   }
 }
@@ -2305,7 +2327,8 @@ async function syncPush(silent,isCreate){
         if(mergeRemoteState(remote)) render();
       }catch(e){}
     }
-    else if(g.status!==404){ syncMarkErr(friendlyHttp(g.status)); if(!silent) toast(friendlyHttp(g.status)); return; }
+    else if(g.status!==404){ const m=friendlyHttp(g.status,"write"); syncMarkErr(m,g.status);
+      if(!silent) toast(m); return; }
     const body={ message:"sync "+(isCreate?"init ":"")+new Date().toISOString(),
                  content:b64enc(JSON.stringify(payload())) };
     if(sha) body.sha=sha;
@@ -2323,13 +2346,13 @@ async function syncPush(silent,isCreate){
             content:b64enc(JSON.stringify(payload())), sha:jj.sha })});
         if(retry.ok){ syncMarkOk("已上传云端（重试成功）"); return; }
       }
-      syncMarkErr("与另一台设备同时写入，重试仍未成功");
+      syncMarkErr("与另一台设备同时写入，重试仍未成功",409);
       if(!silent) toast("同步冲突，稍后再试");
       return;
     }
-    syncMarkErr(friendlyHttp(r.status));
-    if(!silent) toast(friendlyHttp(r.status));
-  }catch(e){ syncMarkErr(netMsg(e)); if(!silent) toast(netMsg(e)); }
+    const m=friendlyHttp(r.status,"write");
+    syncMarkErr(m,r.status); if(!silent) toast(m);
+  }catch(e){ syncMarkErr(netMsg(e),0); if(!silent) toast(netMsg(e)); }
 }
 /* 任何改动都触发，防抖 2.5 秒 */
 function schedulePush(){
@@ -2365,35 +2388,73 @@ function bootstrapTokenFromHash(){
 
 /* ============ 诊断 ============ */
 async function runDiagnostics(){
-  const out=[];
-  const s=syncSettings();
-  out.push("① 同步配置："+s.owner+"/"+s.repo+" → "+s.path);
-  if(!s.token){ out.push("   ✕ 本机没有保存令牌 —— 请先粘贴 Fine-grained PAT"); return out.join("\n"); }
-  out.push("   ✓ 令牌已保存（"+s.token.slice(0,4)+"…"+s.token.slice(-4)+"，共 "+s.token.length+" 字符）");
-  out.push("② 测试能否访问 api.github.com …");
+  const out=[]; const s=syncSettings();
+  const line=t=>out.push(t);
+  line("① 同步配置："+s.owner+"/"+s.repo+" → "+s.path);
+  if(!s.token){ line("   ✕ 本机没有保存令牌 —— 先粘贴 Fine-grained PAT"); return out.join("\n"); }
+  line("   ✓ 令牌已保存（"+s.token.slice(0,7)+"…"+s.token.slice(-4)+"，共 "+s.token.length+" 字符）");
+
+  line("");
+  line("② 能否访问 api.github.com");
   try{
     const r=await fetch("https://api.github.com/",{cache:"no-store"});
-    out.push("   ✓ 有响应（HTTP "+r.status+"）—— 拿到任何响应都算网络通");
-    if(r.status===403) out.push("     · 403 通常是未认证限流，不影响带令牌的请求");
+    line("   ✓ 有响应（HTTP "+r.status+"）—— 拿到任何响应都算网络通");
   }catch(e){
-    out.push("   ✕ 连不上："+netMsg(e));
-    out.push("     · 中国大陆网络常见：github.io 能开 ≠ api.github.com 能通，两者可能被分别处理");
-    out.push("     · 请用手机 Safari 直接打开 https://api.github.com/ 确认，必要时挂代理");
+    line("   ✕ 连不上："+netMsg(e));
+    line("     · github.io 能开 ≠ api.github.com 能通，两者常被分别处理");
+    line("     · 用手机 Safari 直接打开 https://api.github.com/ 确认，必要时挂代理");
     return out.join("\n");
   }
+
+  line("");
+  line("③ 令牌本身是否有效");
   try{
     const r=await fetch("https://api.github.com/user",{headers:syHeaders(s.token),cache:"no-store"});
-    if(r.status===401){ out.push("③ 令牌校验：✕ 无效或已过期（401）—— 重新生成一个"); return out.join("\n"); }
-    if(r.status===403){ out.push("③ 令牌校验：✕ 权限不足或触发限流（403）"); return out.join("\n"); }
-    if(!r.ok){ out.push("③ 令牌校验：✕ "+friendlyHttp(r.status)); return out.join("\n"); }
+    if(r.status===401){ line("   ✕ 无效或已过期（401）—— 重新生成一个令牌"); return out.join("\n"); }
+    if(r.status===403){ line("   ✕ 权限不足或限流（403）"); return out.join("\n"); }
+    if(!r.ok){ line("   ✕ "+friendlyHttp(r.status)); return out.join("\n"); }
     const u=await r.json();
-    out.push("③ 令牌校验：✓ 有效（账号 "+u.login+"）");
-    const rr=await fetch(syncUrl(),{headers:syHeaders(s.token),cache:"no-store"});
-    if(rr.status===404) out.push("④ 数据文件：还不存在 —— 下次同步会用本机数据创建（正常）");
-    else if(rr.ok){ const j=await rr.json();
-      out.push("④ 数据文件：✓ 存在，约 "+Math.round((j.size||0)/1024*10)/10+" KB"); }
-    else out.push("④ 数据文件：✕ "+friendlyHttp(rr.status)+" —— 检查仓库名与 Contents 权限");
-  }catch(e){ out.push("③/④ 请求失败："+netMsg(e)); }
+    line("   ✓ 有效（账号 "+u.login+"）");
+  }catch(e){ line("   ✕ 请求失败："+netMsg(e)); return out.join("\n"); }
+
+  line("");
+  line("④ 令牌能否看到这个仓库（决定性的一步）");
+  try{
+    const rr=await fetch("https://api.github.com/repos/"+encodeURIComponent(s.owner)+"/"+encodeURIComponent(s.repo),
+      {headers:syHeaders(s.token),cache:"no-store"});
+    if(rr.status===404){
+      line("   ✕ 看不到 "+s.owner+"/"+s.repo+"（404）");
+      line("     · 这就是同步失败的原因。Fine-grained 令牌没勾选该仓库时，");
+      line("       GitHub 返回 404 而不是 403 —— 它不告诉你私有仓库是否存在。");
+      line("     · 去 GitHub → Settings → Developer settings → Fine-grained tokens");
+      line("       → 编辑这个令牌 → Repository access 选 Only select repositories");
+      line("       → 勾上 "+s.repo+" → 保存后回到这里重试");
+      return out.join("\n");
+    }
+    if(!rr.ok){ line("   ✕ "+friendlyHttp(rr.status,"write")); return out.join("\n"); }
+    const j=await rr.json();
+    const canWrite=!!(j.permissions&&j.permissions.push);
+    line("   ✓ 仓库可见："+j.full_name+"（"+(j.private?"private":"public")+"）");
+    if(canWrite) line("   ✓ 有写入权限（permissions.push = true）");
+    else{
+      line("   ✕ 没有写入权限（permissions.push = false）");
+      line("     · 去令牌设置里把 Contents 改为 Read and write");
+      return out.join("\n");
+    }
+  }catch(e){ line("   ✕ 请求失败："+netMsg(e)); return out.join("\n"); }
+
+  line("");
+  line("⑤ 数据文件");
+  try{
+    const r=await fetch(syncUrl(),{headers:syHeaders(s.token),cache:"no-store"});
+    if(r.status===404) line("   · 还不存在 —— 下次同步会用本机数据创建（正常）");
+    else if(r.ok){ const j=await r.json();
+      line("   ✓ 存在，约 "+(Math.round((j.size||0)/102.4)/10)+" KB"); }
+    else line("   ✕ "+friendlyHttp(r.status));
+  }catch(e){ line("   ✕ "+netMsg(e)); }
+
+  line("");
+  line("全部环节通过 ✓ 若仍失败，点「立即同步」看具体报错。");
   return out.join("\n");
 }
 
@@ -2420,7 +2481,11 @@ function renderSyncBanner(){
   if(!el) return;
   if(!syncToken()||!syncMeta.lastErr){ el.innerHTML=""; el.classList.add("hidden"); return; }
   el.classList.remove("hidden");
-  el.innerHTML='<div class="banner err">⚠️ 同步失败：'+esc(syncMeta.lastErr)+
+  el.innerHTML='<div class="banner err" style="align-items:flex-start">'+
+    '<div style="flex:1;min-width:200px">⚠️ 同步失败：'+esc(syncMeta.lastErr)+
+    '<div style="font-weight:500;font-size:12.5px;opacity:.95;margin-top:5px;line-height:1.6">'+
+    esc(syncHint())+'</div></div>'+
+    '<button class="btn btn-sm" onclick="goTab(\'me\')">去设置</button>'+
     '<button class="btn btn-sm" onclick="manualSync()">重试</button></div>';
 }
 function manualSync(){ syncPull({silent:false}); }
@@ -2476,9 +2541,9 @@ function syncPanelHtml(){
       </div>
 
       <div style="display:flex;gap:8px;margin-bottom:10px">
-        <input class="field" type="password" id="syncToken"
+        <input class="field" type="password" id="syncToken" style="flex:1;min-width:0"
           placeholder="${linked?"已配置（重新粘贴可替换）":"粘贴 GitHub Fine-grained PAT"}" value="${esc(s.token)}"/>
-        <button class="btn btn-primary btn-sm" onclick="saveSyncToken()">保存</button>
+        <button class="btn btn-primary btn-sm" style="flex:0 0 auto" onclick="saveSyncToken()">保存</button>
       </div>
 
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
@@ -2490,7 +2555,9 @@ function syncPanelHtml(){
       ${linked?`<div class="note" style="margin-bottom:12px">
         状态：<b>${st.ic} ${esc(st.txt)}</b><br/>
         上次成功：<b>${syncMeta.lastOk?agoText(syncMeta.lastOk)+"（"+dstr(new Date(syncMeta.lastOk))+"）":"从未"}</b><br/>
-        ${syncMeta.lastErr?('上次失败：<b style="color:#dc2626">'+esc(syncMeta.lastErr)+"</b><br/>"):""}
+        ${syncMeta.lastErr?('上次失败：<b style="color:#dc2626">'+esc(syncMeta.lastErr)+"</b><br/>"+
+          '<span style="display:block;background:rgba(245,158,11,.13);border-radius:10px;padding:9px 11px;margin:7px 0;color:#b45309;font-weight:600">'+
+          esc(syncHint())+"</span>"):""}
         同步是自动的：打开应用、切回前台、联网、以及任何改动后 2.5 秒。
       </div>`:""}
 
@@ -2500,12 +2567,12 @@ function syncPanelHtml(){
         <summary style="padding:10px 0;min-height:auto;font-size:13px">⚙️ 存储位置（一般不用改）</summary>
         <div style="padding-top:10px">
           <div style="display:flex;gap:8px;margin-bottom:8px">
-            <input class="field" id="syOwner" placeholder="owner" value="${esc(s.owner)}"/>
-            <input class="field" id="syRepo" placeholder="repo" value="${esc(s.repo)}"/>
+            <input class="field" id="syOwner" placeholder="owner" style="flex:1;min-width:0" value="${esc(s.owner)}"/>
+            <input class="field" id="syRepo" placeholder="repo" style="flex:1;min-width:0" value="${esc(s.repo)}"/>
           </div>
           <div style="display:flex;gap:8px">
-            <input class="field" id="syPath" placeholder="path" value="${esc(s.path)}"/>
-            <button class="btn btn-line btn-sm" onclick="saveSyncRepo()">保存</button>
+            <input class="field" id="syPath" placeholder="path" style="flex:1;min-width:0" value="${esc(s.path)}"/>
+            <button class="btn btn-line btn-sm" style="flex:0 0 auto" onclick="saveSyncRepo()">保存</button>
           </div>
         </div>
       </details>
