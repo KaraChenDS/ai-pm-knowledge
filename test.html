@@ -72,15 +72,17 @@ function runPhase(){
   var w=FRAME.contentWindow;
   w.localStorage.clear();
   if(p.seed) Object.keys(p.seed).forEach(function(k){ w.localStorage.setItem(k,p.seed[k]); });
-  w.location.reload();
-  waitReady(function(){
-    var rows=[];
-    try{ rows=p.check(w)||[]; }
-    catch(e){ rows=[['执行异常：'+e.message,false]]; }
-    rows.forEach(function(r){ RESULTS.push({phase:p.name,name:r[0],ok:!!r[1]}); });
-    paint();
-    runPhase();
-  });
+  FRAME.addEventListener('load', function(){
+    waitReady(function(){
+      var rows=[];
+      try{ rows=p.check(w)||[]; }
+      catch(e){ rows=[['执行异常：'+e.message,false]]; }
+      rows.forEach(function(r){ RESULTS.push({phase:p.name,name:r[0],ok:!!r[1]}); });
+      paint();
+      runPhase();
+    });
+  }, {once:true});
+  FRAME.src='index.html?test='+idx;
 }
 
 function paint(){
@@ -122,7 +124,7 @@ phase('数据完整性', null, function(w){
   var it=w.ITEMS();
   var ids={},dup=0; it.forEach(function(x){ if(ids[x.id])dup++; ids[x.id]=1; });
   return [
-    ['知识点总数 = 63', it.length===63],
+    ['保留 63 项旧资料，另有 18 项项目动作', it.length===81 && w.projectItems().length===18],
     ['知识点 ID 唯一', dup===0],
     ['ID 规则与 v1 一致（hard-0-0）', w.itemId('hard',0,0)==='hard-0-0'],
     ['每项都有「第一步动作」', it.every(function(x){return x.item.a&&x.item.a.length>8;})],
@@ -146,29 +148,29 @@ phase('v1 数据迁移', {
     ['{done:true} 迁移为「已掌握」st=2', w.stOf('hard-0-0')===2],
     ['未完成的项保持 st=0', w.stOf('hard-0-1')===0],
     ['旧笔记完整保留', w.noteOf('hard-0-0')==='旧笔记'],
-    ['总掌握度按 1/63 · 2 计分', w.weightedPct()===Math.round(1/(63*2)*100)]
+    ['旧进度仍可查看，项目进度单独计算', w.byId('hard-0-0').item.t==='机器学习核心概念' && w.weightedPct()===0]
   ];
 });
 
 /* 3. 三态与计分 */
 phase('三态与计分', null, function(w){
-  w.setStage('hard-0-0',1);
-  var a=w.stOf('hard-0-0'), p1=w.weightedPct();
-  w.setStage('hard-0-0',2);
-  var b=w.stOf('hard-0-0'), p2=w.weightedPct();
-  w.setStage('hard-0-0',0);
+  w.setStage('project-users',1);
+  var a=w.stOf('project-users'), p1=w.weightedPct();
+  w.setStage('project-users',2);
+  var b=w.stOf('project-users'), p2=w.weightedPct();
+  w.setStage('project-users',0);
   return [
     ['标记「学习中」= st 1', a===1],
-    ['学习中记 0.5 分', p1===Math.round(0.5/(63*2)*100)],
+    ['学习中记 0.5 分', p1===Math.round(0.5/18*100)],
     ['标记「已掌握」= st 2', b===2],
-    ['已掌握记 1 分', p2===Math.round(1/(63*2)*100)],
-    ['可回退为「未开始」', w.stOf('hard-0-0')===0]
+    ['已掌握记 1 分', p2===Math.round(1/18*100)],
+    ['可回退为「未开始」', w.stOf('project-users')===0]
   ];
 });
 
 /* 4. 专注计时全流程 */
 phase('专注计时', null, function(w){
-  w.startTimer('hard-0-0',25);
+  w.startTimer('project-users',25);
   var pill=w.document.querySelector('.timer-pill');
   var running=pill && !pill.classList.contains('hidden');
   var rem=w.remainingMs();
@@ -179,7 +181,7 @@ phase('专注计时', null, function(w){
     ['剩余时间≈25 分钟', rem>24*60000 && rem<=25*60000],
     ['结束后计时器清空', w.remainingMs()===0],
     ['结束后胶囊隐藏', pill2 && pill2.classList.contains('hidden')],
-    ['结束后自动标记「学习中」', w.stOf('hard-0-0')===1],
+    ['结束后自动标记「学习中」', w.stOf('project-users')===1],
     ['结束后记录 25 分钟专注', w.minutesOn(w.todayKey())===25],
     ['结束后计入本周专注', w.minutesThisWeek()===25],
     ['结束后记为活跃日（连续天数）', w.streak()>=1]
@@ -198,7 +200,7 @@ phase('周计划与滚入', {
   return [
     ['「从地图挑」一次排入 3 个', n1===3],
     ['再挑一次累加到 6 个（不重复）', n2===6 && dup===0],
-    ['排入的都是「未开始」的项', w.weekItems(w.curWeek()).every(function(id){return w.stOf(id)===0;})]
+    ['排入的都是「未开始」的项', w.weekItems(w.curWeek()).every(function(id){return w.stOf(id)===0 && id.startsWith('project-');})]
   ];
 });
 
@@ -220,65 +222,80 @@ phase('上周遗留滚入', (function(){
 });
 
 /* 6. C — 前置依赖排序 */
+
 phase('C · 前置依赖排序', null, function(w){
   var ids=function(){ return w.candidates().map(function(x){return x.id;}); };
-  var fresh=ids().indexOf('hard-1-2');          // RAG
-  var head0=w.currentFocus().item.t;
-  var blockedBefore=w.blockedBy(w.byId('hard-1-2')).length;   // 必须在打通依赖链之前取
-  w.setStage('hard-0-0',1);
-  w.setStage('hard-0-1',1);
-  w.setStage('hard-1-0',1);
-  w.setStage('hard-1-1',1);
-  var after=ids().indexOf('hard-1-2');
+  var first=ids()[0], fresh=ids().indexOf('project-contract');
+  var unmet=w.blockedBy(w.byId('project-contract'));
+  w.setStage('project-brief',1);
+  var after=ids().indexOf('project-contract');
   return [
-    ['全新安装时 RAG 沉底（不在前 20 位）', fresh>=20],
-    ['RAG 的前置未满足时有「先学」提示', blockedBefore>0 || fresh===0],
-    ['打通依赖链后 RAG 名次显著上升', after < fresh],
-    ['打通后 RAG 进入前列（前 25 位）', after<=24],
-    ['前置满足后不再提示「先学」', w.blockedBy(w.byId('hard-1-2')).length===0],
-    ['推荐首位是可立即上手的动作', !!head0]
+    ['全新安装先推荐「选场景」动作', first==='project-users'],
+    ['任务契约以前一阶段的简报为前置', unmet.length===1 && unmet[0].id==='project-brief'],
+    ['前置开始后任务契约排名上升', after<fresh],
+    ['前置满足后不再提示「先学」', w.blockedBy(w.byId('project-contract')).length===0]
   ];
 });
 
-phase('C · 可关闭依赖排序', {'aippm_settings_v1':JSON.stringify({pathMode:false})}, function(w){
-  var off=w.candidates().map(function(x){return x.id;}).indexOf('hard-1-2');
+phase('C · 可关闭依赖排序', {'aippm_settings_v1':JSON.stringify({pathMode:false,focusGroups:['task-0']})}, function(w){
   return [
-    ['关闭后 RAG 不再被沉底（名次 < 40）', off<40]
+    ['关闭后可先推荐聚焦阶段的任务', w.groupId(w.currentFocus())==='task-0']
+  ];
+});
+
+phase('项目地图与资料库', {'aippm_progress_v1':JSON.stringify({'hard-1-2':{done:true,ts:123,note:'原来的 RAG 笔记'}})}, function(w){
+  w.goTab('map');
+  var stages=Array.from(w.document.querySelectorAll('.pcard h3')).map(function(el){return el.textContent;});
+  w.pickPillar('execute');
+  var hasMCP=w.document.getElementById('view').textContent.includes('接入工具与 MCP');
+  var hasGate=w.document.getElementById('view').textContent.includes('打开可运行原型');
+  w.openSheet('project-prototype');
+  w.onNote('project-prototype','https://example.com/prototype');
+  w.setStage('project-prototype',2);
+  w.loadAll();
+  w.pickPillar('library');
+  w.setMapFilter('done');
+  return [
+    ['四阶段按项目顺序展示', stages.join(' → ')==='选场景 → 设计任务 → 接入与执行 → 评测上线'],
+    ['执行阶段有 MCP 和交付物入口', hasMCP && hasGate],
+    ['交付物链接和状态可持久化', w.noteOf('project-prototype')==='https://example.com/prototype' && w.isMastered('project-prototype')],
+    ['资料库已掌握筛选保留旧记录', w.document.getElementById('view').textContent.includes('RAG 检索增强生成') && w.noteOf('hard-1-2')==='原来的 RAG 笔记'],
+    ['资料库条目不占用自动推荐名额', w.candidates().every(function(x){return x.id.startsWith('project-');})]
   ];
 });
 
 /* 7. B — 聚焦方向 */
-phase('B · 聚焦方向优先', {'aippm_settings_v1':JSON.stringify({focusGroups:['hard-2']})}, function(w){
+phase('B · 聚焦方向优先', {'aippm_settings_v1':JSON.stringify({focusGroups:['scenario-0']})}, function(w){
   var head=w.currentFocus();
-  var inGroup=w.groupId(head)==='hard-2';
-  var top2=w.candidates().slice(0,2).every(function(x){return w.groupId(x)==='hard-2';});
+  var inGroup=w.groupId(head)==='scenario-0';
+  var top2=w.candidates().slice(0,2).every(function(x){return w.groupId(x)==='scenario-0';});
   return [
-    ['选中「数据能力」后队首属于该方向', inGroup],
+    ['选中「选场景」后队首属于该方向', inGroup],
     ['该方向占满推荐前 2 位（该方向已就绪的项）', top2]
   ];
 });
 
 phase('B · 最多选 2 个方向', null, function(w){
   w.goTab('me');
-  w.toggleFocusGroup('hard-2');
-  w.toggleFocusGroup('soft-0');
+  w.toggleFocusGroup('scenario-0');
+  w.toggleFocusGroup('task-0');
   var n2=w.document.querySelectorAll('.fg-chip.on').length;
-  w.toggleFocusGroup('practice-1');   // 第 3 个应被拒绝
+  w.toggleFocusGroup('execute-0');   // 第 3 个应被拒绝
   var n3=w.document.querySelectorAll('.fg-chip.on').length;
   return [
     ['可以选满 2 个方向', n2===2],
     ['选满后第 3 个被拒绝', n3===2],
-    ['设置页列出了全部 14 个知识组', w.document.querySelectorAll('.fg-chip').length===14]
+    ['设置页列出了四个项目阶段', w.document.querySelectorAll('.fg-chip').length===4]
   ];
 });
 
-phase('B×C · 聚焦区还被前置卡住时给出解锁提示', {'aippm_settings_v1':JSON.stringify({focusGroups:['hard-1']})}, function(w){
+phase('B×C · 聚焦区还被前置卡住时给出解锁提示', {'aippm_settings_v1':JSON.stringify({focusGroups:['task-0']})}, function(w){
   var h=w.focusUnlock();
   return [
-    ['聚焦「大模型」但整块未就绪时，队首仍是可做的项', w.groupId(w.currentFocus())!=='hard-1'],
+    ['聚焦「设计任务」但整块未就绪时，队首仍是可做的项', w.groupId(w.currentFocus())!=='task-0'],
     ['并给出解锁提示', typeof h==='string' && h.indexOf('解锁')>=0 || h.indexOf('前置')>=0],
-    ['提示点名的是「现在就能做」的根节点', h.indexOf('机器学习核心概念')>=0],
-    ['提示不点名中间层（那些本身还被卡住）', h.indexOf('Prompt Engineering')<0]
+    ['提示点名的是「现在就能做」的根节点', h.indexOf('找出值得解决的任务')>=0],
+    ['提示不点名中间层（那些本身还被卡住）', h.indexOf('定义任务契约')<0]
   ];
 });
 
@@ -298,7 +315,7 @@ phase('E · 时长自适应', {'aippm_settings_v1':JSON.stringify({focus:60,path
 phase('E · 时间充裕时不干预', {'aippm_settings_v1':JSON.stringify({focus:60,pathMode:true,focusGroups:[]})}, function(w){
   var top=w.candidates().slice(0,6);
   return [
-    ['预算 60 分钟时允许出现长动作（≥90 分钟）', top.some(function(x){return x.item.m>=90;})]
+    ['预算 60 分钟时同优先级回到地图顺序', top[0].id==='project-users' && top[1].id==='project-baseline']
   ];
 });
 
@@ -369,15 +386,15 @@ phase('推荐依据说明 · 默认', {'aippm_settings_v1':JSON.stringify({focus
   ];
 });
 
-phase('推荐依据说明 · 聚焦生效', {'aippm_settings_v1':JSON.stringify({focus:25,focusGroups:['hard-2'],pathMode:true})}, function(w){
+phase('推荐依据说明 · 聚焦生效', {'aippm_settings_v1':JSON.stringify({focus:25,focusGroups:['scenario-0'],pathMode:true})}, function(w){
   var f=w.currentFocus(), why=stripTags(w.whyFocus(f));
   return [
-    ['聚焦推上来的项确实属于该方向', w.groupId(f)==='hard-2'],
+    ['聚焦推上来的项确实属于该方向', w.groupId(f)==='scenario-0'],
     ['说明里点名了聚焦方向', why.indexOf('聚焦方向')>=0]
   ];
 });
 
-phase('推荐依据说明 · 时长超预算', {'aippm_settings_v1':JSON.stringify({focus:60,focusGroups:['hard-2'],pathMode:true})}, function(w){
+phase('推荐依据说明 · 时长超预算', {'aippm_settings_v1':JSON.stringify({focus:60,focusGroups:['scenario-0'],pathMode:true})}, function(w){
   var f=w.currentFocus(), why=stripTags(w.whyFocus(f));
   return [
     ['时间充裕时说明不按时长筛', why.indexOf('时间充裕')>=0],
@@ -398,10 +415,10 @@ phase('推荐依据说明 · 依赖未满足时如实说', null, function(w){
 });
 
 phase('推荐依据说明 · 已开始项', null, function(w){
-  w.setStage('hard-0-0',1);
+  w.setStage('project-users',1);
   var f=w.currentFocus(), why=stripTags(w.whyFocus(f));
   return [
-    ['焦点仍是刚推进的那一项', f.id==='hard-0-0'],
+    ['焦点仍是刚推进的那一项', f.id==='project-users'],
     ['说明为「你已经开始了这一项」', why.indexOf('你已经开始了这一项')>=0]
   ];
 });
@@ -541,11 +558,11 @@ phase('390px 无横向溢出', null, function(w){
   res.push(['地图首页 · 无元素溢出', m.bad.length===0]);
   if(m.bad.length) res.push(['溢出元素：'+m.bad.slice(0,4).join(' | '), false]);
 
-  w.pickPillar('hard'); var d=scan();
-  res.push(['地图·硬实力列表（含🔒先学标记）· 无元素溢出', d.bad.length===0]);
+  w.pickPillar('execute'); var d=scan();
+  res.push(['地图·接入与执行列表（含🔒先学标记）· 无元素溢出', d.bad.length===0]);
   if(d.bad.length) res.push(['溢出元素：'+d.bad.slice(0,4).join(' | '), false]);
 
-  w.openSheet('hard-1-2'); var s=scan();
+  w.openSheet('project-mcp'); var s=scan();
   res.push(['知识点抽屉 · 无元素溢出', s.bad.length===0]);
   if(s.bad.length) res.push(['溢出元素：'+s.bad.slice(0,4).join(' | '), false]);
   w.closeSheet();
@@ -571,12 +588,15 @@ phase('390px 无横向溢出', null, function(w){
 });
 
 /* ================= 启动 ================= */
-FRAME.addEventListener('load', function(){
-  if(started) return;
-  started=true;
-  setTimeout(runPhase, 350);
-});
-setTimeout(function(){ if(!started){ started=true; runPhase(); } }, 1500);
+if(['localhost','127.0.0.1','[::1]'].includes(location.hostname)){
+  FRAME.addEventListener('load', function(){
+    if(started) return;
+    started=true;
+    runPhase();
+  });
+}else{
+  SUM.textContent='请在本地测试服务器运行自测。';
+}
 </script>
 </body>
 </html>

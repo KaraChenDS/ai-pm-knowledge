@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="description" content="AI 产品经理知识体系：把 63 个知识点拆成今天就能做完的第一步动作，配专注计时与周计划。" />
+<meta name="description" content="AI 产品经理知识体系：从选场景、设计任务、接入与执行到评测上线的 AI 产品项目地图。" />
 <title>AI 产品经理知识体系</title>
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg"/>
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png"/>
@@ -244,9 +244,10 @@
 
   /* ============ 知识地图 ============ */
   .pillars{display:grid;grid-template-columns:1fr;gap:12px}
-  @media(min-width:600px){.pillars{grid-template-columns:repeat(3,1fr)}}
+  @media(min-width:600px){.pillars{grid-template-columns:repeat(2,minmax(0,1fr))}}
   .pcard{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:17px;
     box-shadow:var(--shadow);position:relative;overflow:hidden;text-align:left;width:100%;transition:.18s}
+  .link-row a.btn{text-decoration:none}
   .pcard:active{transform:scale(.985)}
   @media(hover:hover){.pcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px)}}
   .pcard .glow{position:absolute;right:-34px;top:-34px;width:112px;height:112px;border-radius:50%;
@@ -450,8 +451,8 @@
           <div class="pct" id="ringPct">0%</div>
         </div>
         <div>
-          <div style="font-size:12.5px;font-weight:700">体系掌握度</div>
-          <div style="font-size:11.5px;color:var(--muted)" id="ringSub">0 / 63 项已掌握</div>
+          <div style="font-size:12.5px;font-weight:700">项目进度</div>
+          <div style="font-size:11.5px;color:var(--muted)" id="ringSub">0 项已掌握</div>
         </div>
       </div>
       <div class="bar sm"><i id="ringBar" style="width:0%;background:linear-gradient(90deg,#6366f1,#ec4899)"></i></div>
@@ -474,7 +475,7 @@
     <div id="syncBanner" class="hidden" style="margin-top:12px"></div>
     <div id="view"></div>
     <footer class="foot">
-      把 63 个知识点拆成「今天就能做完的一步」· 数据保存在本设备浏览器<br/>
+      选场景 → 设计任务 → 接入与执行 → 评测上线· 数据保存在本设备浏览器<br/>
       AI 产品经理知识体系 · 持续迭代中
     </footer>
   </div>
@@ -495,7 +496,7 @@
    数据层：每个知识点都带「第一步动作 / 验收标准 / 搜索词 / 权威入口」
    —— 这是 v2 的核心：把「学科名」翻译成「今天能做完的一步」
    ===================================================================== */
-const PILLARS = [
+const LIBRARY = [
   {
     id:"hard", name:"硬实力", sub:"专业技术能力", icon:"🧠", color:"#6366f1",
     groups:[
@@ -793,12 +794,62 @@ const PILLARS = [
   }
 ];
 
+/* 项目动作使用独立 ID，资料库继续沿用旧版 ID。 */
+const PROJECT_STAGES = [
+  {id:"scenario", name:"选场景", icon:"🔎", color:"#4f46e5",
+   deliverable:"场景简报", sub:"明确服务谁、替代哪段工作、怎样衡量价值", groups:[{name:"场景简报", icon:"🔎", items:[
+    {"id":"project-users","t":"找出值得解决的任务","d":"用户研究、需求洞察与工作流","a":"访谈一位目标用户，复盘最近一次完成任务的全过程","k":"记录触发条件、频率、当前做法和最费力的一步","m":25,"change":"调整","q":"AI 产品 找出值得解决的任务","s":"项目练习"},
+    {"id":"project-mode","t":"选择合适的自动化方式","d":"规则、固定工作流、Copilot 与 Agent 的取舍","a":"对比现有做法与三种实现，圈出需要模型临场判断的步骤","k":"写清选型依据，以及何时退回更简单的方案","m":25,"change":"调整","q":"AI 产品 选择合适的自动化方式","s":"www.anthropic.com","url":"https://www.anthropic.com/research/building-effective-agents"},
+    {"id":"project-baseline","t":"建立现状基线","d":"任务耗时、完成率、人工成本与 ROI","a":"找三条真实任务，记录现有耗时、返工次数和失败代价","k":"定义试点成功指标、对照基线和最低改善门槛","m":30,"change":"调整","q":"AI 产品 建立现状基线","s":"项目练习"},
+    {"id":"project-brief","t":"交付场景简报","d":"把一个真实场景带进后续三个阶段","a":"用一页写下目标用户、触发、当前做法、目标与试点范围","k":"明确哪些动作值得交给 AI、哪些由用户保留，以及怎么衡量价值","m":30,"change":"交付物","q":"AI 产品 交付场景简报","s":"项目练习"}
+  ]}]},
+  {id:"task", name:"设计任务", icon:"🧩", color:"#9333ea",
+   deliverable:"任务规格", sub:"把用户意图翻译成可执行、可验收的任务", groups:[{name:"任务规格", icon:"🧩", items:[
+    {"id":"project-contract","t":"定义任务契约","d":"任务输入、成功条件与失败分支","a":"选一个真实输入，写出交付物格式、完成条件和缺信息时的问题","k":"用一个正常例和一个失败例验收任务定义","m":25,"change":"调整","q":"AI 产品 定义任务契约","s":"项目练习"},
+    {"id":"project-agent","t":"设计 Agent 与人机分工","d":"决策循环、工具选择、澄清、审批与退出","a":"画出决策 → 调工具 → 验证结果 → 停止或继续，标出人工接管点","k":"列出可自动、需确认和禁止的动作，写清预算耗尽时的行为","m":30,"change":"调整","q":"AI 产品 设计 Agent 与人机分工","s":"www.anthropic.com","url":"https://www.anthropic.com/research/building-effective-agents"},
+    {"id":"project-context","t":"设计模型与上下文","d":"模型选型、指令、结构化输出、多模态与上下文预算","a":"为同一任务对比两套模型或上下文配置，去掉无关信息","k":"说清质量、成本、延迟的取舍，并定义输出字段和失败提示","m":30,"change":"调整","q":"AI 产品 设计模型与上下文","s":"www.anthropic.com","url":"https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"},
+    {"id":"project-memory","t":"设计 Personal AI 与记忆","d":"跨会话偏好、外部资料、任务状态与主动服务","a":"列出三条候选记忆和一个提醒触发，注明来源、使用条件与失效条件","k":"用户能查、改、删记忆，能关闭主动触发；代办动作有明确授权","m":35,"change":"新增","q":"AI 产品 设计 Personal AI 与记忆","s":"help.openai.com","url":"https://help.openai.com/en/articles/8590148-memory-in-chatgpt"},
+    {"id":"project-spec","t":"交付任务规格","d":"用一张表对齐产品、设计和研发","a":"把任务、输入、输出、自动化边界、人工接管和失败结果写成规格","k":"正常任务、缺信息、权限不足三种情形都有预期行为","m":35,"change":"交付物","q":"AI 产品 交付任务规格","s":"项目练习"}
+  ]}]},
+  {id:"execute", name:"接入与执行", icon:"⚙️", color:"#087f75",
+   deliverable:"可运行原型", sub:"让任务能调用真实能力，并在失败时可控", groups:[{name:"可运行原型", icon:"⚙️", items:[
+    {"id":"project-mcp","t":"接入工具与 MCP","d":"Function Calling、API、连接器、Tools／Resources／Prompts","a":"接一个只读工具，画出模型、宿主、MCP 客户端／服务端与业务 API 的调用关系","k":"演示成功调用和权限拒绝，说明读写范围、授权和撤销位置","m":35,"change":"新增","q":"AI 产品 接入工具与 MCP","s":"blog.modelcontextprotocol.io","url":"https://blog.modelcontextprotocol.io/posts/2026-07-28/"},
+    {"id":"project-retrieval","t":"接入知识与可信检索","d":"传统 RAG、结构化检索、Agentic RAG 与统一引用","a":"找一个简单问答和一个跨文档问题，分别选择路由并保留证据","k":"解释召回、重排、成本取舍，确认引用可查且无证据时有兜底","m":35,"change":"调整","q":"AI 产品 接入知识与可信检索","s":"项目练习"},
+    {"id":"project-harness","t":"设计 Harness 与任务恢复","d":"工具供给、运行状态、沙箱、超时、重试与断点恢复","a":"让一次工具调用超时，写出用户看到的进度和任务恢复方式","k":"进度可见、任务可停，重试写入不会重复，执行过程可追查","m":40,"change":"新增","q":"AI 产品 设计 Harness 与任务恢复","s":"www.anthropic.com","url":"https://www.anthropic.com/research/harness-design-long-running-apps"},
+    {"id":"project-safety","t":"处理权限与外部内容风险","d":"最小权限、提示注入、敏感数据和操作审计","a":"用一份含恶意指令的文档测试只读工具，再模拟一次高风险写入","k":"外部内容不能扩大授权；高风险动作需确认，结果可审计","m":30,"change":"调整","q":"AI 产品 处理权限与外部内容风险","s":"modelcontextprotocol.io","url":"https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/security_best_practices"},
+    {"id":"project-prototype","t":"交付可运行原型","d":"用同一个场景串起任务规格、工具和运行保障","a":"录下一次端到端执行，再复现一次失败、中断或接管","k":"留下原型入口或演示链接，并附上两次运行的结果与证据","m":45,"change":"交付物","q":"AI 产品 交付可运行原型","s":"项目练习"}
+  ]}]},
+  {id:"launch", name:"评测上线", icon:"📈", color:"#b45309",
+   deliverable:"试点上线方案", sub:"用真实任务决定是否放量以及何时回退", groups:[{name:"试点上线方案", icon:"📈", items:[
+    {"id":"project-evals","t":"构建任务评测集","d":"真实任务、可验证结果、执行轨迹和回归","a":"整理正常、歧义、工具失败、越权四类样本和预期结果","k":"按最终结果与过程分别打分，重复运行关键用例并记录差异","m":40,"change":"调整","q":"AI 产品 构建任务评测集","s":"www.anthropic.com","url":"https://www.anthropic.com/research/demystifying-evals-for-ai-agents"},
+    {"id":"project-metrics","t":"衡量成功、延迟与成本","d":"任务成功率、接管率、P95、成功任务单位成本和 ROI","a":"用小批样本记录成功结果、耗时、重试成本和人工介入","k":"有明确分母和成本口径，能和场景基线比较并说明小样本局限","m":30,"change":"调整","q":"AI 产品 衡量成功、延迟与成本","s":"项目练习"},
+    {"id":"project-rollout","t":"制定试点与回退规则","d":"分批开放、观测告警、降级与事件复盘","a":"写下首批试点范围、监控指标、负责人和停用条件","k":"阈值触发时有人能切回旧方案，并知道如何处理未完成的动作","m":30,"change":"调整","q":"AI 产品 制定试点与回退规则","s":"项目练习"},
+    {"id":"project-decision","t":"交付试点上线方案","d":"汇总评测结论与未解决风险","a":"用一页写出上线、限量试点或继续迭代的决定，并附证据","k":"指标、放量条件、回退条件和复盘时间都能由团队执行","m":35,"change":"交付物","q":"AI 产品 交付试点上线方案","s":"项目练习"}
+  ]}]}
+];
+
 /* =====================================================================
    前置依赖图：id -> [必须先「开始过」的 id]
    只影响「推荐顺序」，不锁死任何入口 —— 地图里随时能直接开任何一项。
    判定标准是前置项达到「学习中」而非「已掌握」，避免卡死。
    ===================================================================== */
 const PREREQ = {
+  "project-mode":["project-users"],
+  "project-brief":["project-mode","project-baseline"],
+  "project-contract":["project-brief"],
+  "project-agent":["project-contract"],
+  "project-context":["project-contract"],
+  "project-memory":["project-contract"],
+  "project-spec":["project-agent","project-context","project-memory"],
+  "project-mcp":["project-spec"],
+  "project-retrieval":["project-spec"],
+  "project-harness":["project-mcp"],
+  "project-safety":["project-mcp"],
+  "project-prototype":["project-harness","project-safety","project-retrieval"],
+  "project-evals":["project-prototype"],
+  "project-metrics":["project-evals"],
+  "project-rollout":["project-evals"],
+  "project-decision":["project-metrics","project-rollout"],
   /* 硬实力 · AI/ML 基础 */
   "hard-0-1":["hard-0-0"],              // 深度学习    <- 机器学习核心概念
   "hard-0-2":["hard-0-1"],              // NLP         <- 深度学习
@@ -935,12 +986,13 @@ let _cache=null;
 function ITEMS(){
   if(!_cache){
     _cache=[];
-    PILLARS.forEach(p=>p.groups.forEach((g,gi)=>g.items.forEach((it,ii)=>{
-      _cache.push({id:itemId(p.id,gi,ii),pillar:p,group:g,item:it,gi:gi,ii:ii});
+    [...PROJECT_STAGES,...LIBRARY].forEach(p=>p.groups.forEach((g,gi)=>g.items.forEach((it,ii)=>{
+      _cache.push({id:it.id||itemId(p.id,gi,ii),pillar:p,group:g,item:it,gi:gi,ii:ii});
     })));
   }
   return _cache;
 }
+function projectItems(){ return ITEMS().filter(x=>x.pillar.deliverable); }
 function byId(id){ const a=ITEMS(); for(let i=0;i<a.length;i++) if(a[i].id===id) return a[i]; return null; }
 function stOf(id){ const p=progress[id]; return (p&&p.st!=null)?p.st:0; }
 function isMastered(id){ return stOf(id)===2; }
@@ -970,17 +1022,12 @@ function writeRec(id,patch){
   return r;
 }
 function groupId(x){ return x.pillar.id+"-"+x.gi; }
-function groupNameOf(gid){
-  const a=gid.split("-"), p=PILLARS.filter(z=>z.id===a[0])[0];
-  if(!p) return gid;
-  const g=p.groups[parseInt(a[1],10)];
-  return g ? p.name+" · "+g.name : gid;
+function focusGroups(){
+  return (settings.focusGroups||[]).filter(id=>PROJECT_STAGES.some(p=>id===p.id+"-0"));
 }
 function groupShort(gid){
-  const a=String(gid).split("-"), p=PILLARS.filter(z=>z.id===a[0])[0];
-  if(!p) return gid;
-  const g=p.groups[parseInt(a[1],10)];
-  return g?g.name:gid;
+  const stage=PROJECT_STAGES.find(p=>gid===p.id+"-0");
+  return stage ? stage.name : gid;
 }
 /* 前置项是否都已「开始过」（≥ 学习中） */
 function prereqMet(x){
@@ -1018,9 +1065,9 @@ function prereqFrontier(ids){
 }
 /* B×C 的交汇处：聚焦方向整个还在等前置时，告诉你怎么解锁它 */
 function focusUnlock(){
-  const fg=(settings.focusGroups||[])[0];
+  const fg=focusGroups()[0];
   if(!fg) return "";
-  const mine=ITEMS().filter(x=>groupId(x)===fg && stOf(x.id)===0);
+  const mine=projectItems().filter(x=>groupId(x)===fg && stOf(x.id)===0);
   if(!mine.length || mine.some(x=>prereqMet(x))) return "";
   const roots=prereqFrontier(mine.map(x=>x.id));
   if(!roots.length) return "";
@@ -1031,7 +1078,7 @@ function focusUnlock(){
   </span></div>`;
 }
 function planUnlock(fg){
-  const mine=ITEMS().filter(x=>groupId(x)===fg && stOf(x.id)===0);
+  const mine=projectItems().filter(x=>groupId(x)===fg && stOf(x.id)===0);
   const roots=prereqFrontier(mine.map(x=>x.id));
   if(!roots.length) return;
   addToWeek(roots[0].id);
@@ -1094,11 +1141,11 @@ function planRemove(id){ const w=curWeek(); w.items[id]=-Date.now(); savePlan();
 /* ============ 统计 ============ */
 function markedDay(){ days[todayKey()]=true; saveDays(); }
 function weightedPct(){
-  const total=ITEMS().length*2;
-  let got=0; ITEMS().forEach(x=>got+=STAGE_W[stOf(x.id)]);
+  const items=projectItems(), total=items.length;
+  const got=items.reduce((sum,x)=>sum+STAGE_W[stOf(x.id)],0);
   return total?Math.round(got/total*100):0;
 }
-function countByStage(){ const c=[0,0,0]; ITEMS().forEach(x=>c[stOf(x.id)]++); return c; }
+function countByStage(items=projectItems()){ const c=[0,0,0]; items.forEach(x=>c[stOf(x.id)]++); return c; }
 function progressedToday(){
   const t=todayKey();
   return ITEMS().filter(x=>{ const p=progress[x.id];
@@ -1131,13 +1178,13 @@ function weekActiveDays(){
 
 /* ============ 推荐：现在做什么 ============
    顺序 = 「学习中」优先，其余按四层权重稳定排序：
-     前置依赖已满足(8) > 你指定的聚焦方向(4) > 本周已排(2) > 时长装得下(1)
-   权重 8 > 4+2+1，所以「依赖没满足」的项一定排在所有「依赖已满足」之后。
-   同权重时保持「三大支柱轮转」的基准顺序，避免连着全是硬实力。  */
+     前置依赖已满足(16) > 你指定的聚焦方向(4) > 本周已排(2) > 时长匹配(0–2)
+   权重 16 > 4+2+2，所以「依赖没满足」的项一定排在所有「依赖已满足」之后。
+   同权重时按项目地图顺序。  */
 function candidates(){
-  const all=ITEMS();
+  const all=projectItems();
   const budget=settings.focus;
-  const focusG=settings.focusGroups||[];
+  const focusG=focusGroups();
   const wk=curWeek();
   const pathOn=(settings.pathMode!==false);
 
@@ -1145,18 +1192,8 @@ function candidates(){
   const doing=all.filter(x=>stOf(x.id)===1)
                  .sort((a,b)=>((progress[b.id]||{}).ts||0)-((progress[a.id]||{}).ts||0));
 
-  // 2) 基准顺序：按支柱轮转
+  // 同分按地图顺序，从选场景开始。
   const rest=all.filter(x=>stOf(x.id)===0);
-  const buckets={};
-  rest.forEach(x=>{ const k=x.pillar.id; if(!buckets[k]) buckets[k]=[]; buckets[k].push(x); });
-  const order=PILLARS.map(p=>p.id);
-  const rr=[];
-  let guard=0;
-  while(order.some(pid=>buckets[pid]&&buckets[pid].length)&&guard++<600){
-    order.forEach(pid=>{ if(buckets[pid]&&buckets[pid].length) rr.push(buckets[pid].shift()); });
-  }
-
-  // 3) 稳定排序（同分保持轮转基准序）
   // 时长匹配：预算小就优先推短动作；预算 ≥60 视为「时间充裕」，不再干预顺序
   const fit=x=>{
     if(budget>=60) return 0;
@@ -1165,8 +1202,8 @@ function candidates(){
     if(m<=budget+15) return 1;     // 略超，开个头也行
     return 0;
   };
-  const ranked=rr.map((x,i)=>({x:x,i:i,key:
-      ((!pathOn||prereqMet(x))?8:0)
+  const ranked=rest.map((x,i)=>({x:x,i:i,key:
+      ((!pathOn||prereqMet(x))?16:0)
     + ((focusG.indexOf(groupId(x))>=0)?4:0)
     + (inWeek(wk,x.id)?2:0)
     + fit(x)
@@ -1208,7 +1245,7 @@ function whyFocus(x){
         : "这项没有前置，可以直接开始");
     }
   }
-  if(!rk.doing && (settings.focusGroups||[]).indexOf(groupId(x))>=0)
+  if(!rk.doing && focusGroups().indexOf(groupId(x))>=0)
     r.push("属于你的聚焦方向「<b>"+esc(groupShort(groupId(x)))+"</b>」");
   if(!rk.doing && inWeek(curWeek(),x.id))
     r.push("你已把它排进本周");
@@ -1219,7 +1256,7 @@ function whyFocus(x){
     /* 明显超预算的不在这里重复说明 —— 卡片下方已有「先做 N 分钟也算推进」的专门提示 */
   }
   if(!rk.doing && budget>=60) r.push("你选了「时间充裕」，所以不按时长筛");
-  if(!rk.doing && r.length<=1) r.push("三大支柱轮转轮到「"+esc(x.pillar.name)+"」，避免一直啃同一块");
+  if(!rk.doing && r.length<=1) r.push("按项目地图推进到「"+esc(x.pillar.name)+"」");
   const meta = rk.doing
     ? "你正在推进的项里，它最近一次动过"
     : "待推进的 "+rk.of+" 项里排第 "+rk.pos+(rk.tie>1? "，同时满足的有 "+rk.tie+" 项":"");
@@ -1320,7 +1357,7 @@ function tickLoop(){
 /* ============ 导航 ============ */
 const TABS=[
   {id:"today", name:"今天", icon:"☀️"},
-  {id:"map",   name:"地图", icon:"🗺️"},
+  {id:"map",   name:"项目地图", icon:"🗺️"},
   {id:"plan",  name:"计划", icon:"🎯"},
   {id:"me",    name:"我的", icon:"📊"}
 ];
@@ -1351,7 +1388,7 @@ function renderNav(){
     $("#ringFill").style.strokeDashoffset=String(C-C*pct/100);
     $("#ringPct").textContent=pct+"%";
     $("#ringBar").style.width=pct+"%";
-    $("#ringSub").textContent=c[2]+" / "+ITEMS().length+" 项已掌握";
+    $("#ringSub").textContent=c[2]+" / "+projectItems().length+" 项已掌握";
   }
 }
 
@@ -1383,7 +1420,7 @@ function renderToday(){
         <div class="f-crumb">
           <span class="tag" style="background:${focus.pillar.color}22;color:${focus.pillar.color}">${focus.pillar.icon} ${esc(focus.pillar.name)}</span>
           <span>${esc(focus.group.name)}</span>
-          ${(settings.focusGroups||[]).indexOf(groupId(focus))>=0?'<span class="pill">🎯 聚焦中</span>':''}
+          ${focusGroups().indexOf(groupId(focus))>=0?'<span class="pill">🎯 聚焦中</span>':''}
           ${stOf(focus.id)===1?'<span class="pill st1">学习中</span>':''}
         </div>
         <div class="f-title">${esc(focus.item.t)}</div>
@@ -1424,7 +1461,7 @@ function renderToday(){
       </div>
     </div>`
     :`<div class="panel"><div class="empty"><span class="e-ic">🎉</span>
-        63 个知识点全部标记为已掌握。<br/>去「我的」看看你的累计数据吧。</div></div>`;
+        项目主线已全部完成。<br/>回项目地图查看四份交付物。</div></div>`;
 
   const doneList=ITEMS().filter(x=>{ const p=progress[x.id];
     return p&&p.sts&&p.st>=1&&dstr(new Date(p.sts))===todayKey(); });
@@ -1467,10 +1504,11 @@ function renderToday(){
       </div>
     </div>
 
+    <div class="panel note" style="margin-top:12px">选场景 → 设计任务 → 接入与执行 → 评测上线<br/><button class="btn btn-line btn-sm" style="margin-top:8px" onclick="goTab('map')">打开项目地图</button></div>
     <div id="focusAnchor"></div>
     <div class="sect-h">🎯 现在做这个<span class="sh-sub">${
-      (settings.focusGroups||[]).length
-        ? "聚焦："+esc(settings.focusGroups.map(groupShort).join("、"))
+      focusGroups().length
+        ? "聚焦："+esc(focusGroups().map(groupShort).join("、"))
         : "不是「该学什么」，是「现在做什么」"}</span></div>
     ${focusUnlock()}
     ${focusHtml}
@@ -1517,34 +1555,40 @@ function renderToday(){
 }
 /* ============ 地图 ============ */
 function renderMap(){
-  const c=countByStage();
-  const pillarsHtml=PILLARS.map(p=>{
-    const its=ITEMS().filter(x=>x.pillar.id===p.id);
-    let got=0; its.forEach(x=>got+=STAGE_W[stOf(x.id)]);
-    const pc=its.length?Math.round(got/its.length*100):0;
-    const m=its.filter(x=>stOf(x.id)===2).length;
+  const library=mapPillar==="library";
+  const catalog=library?LIBRARY:PROJECT_STAGES;
+  const list=(mapPillar==="all"||library)?catalog:catalog.filter(p=>p.id===mapPillar);
+  const visibleItems=ITEMS().filter(x=>list.includes(x.pillar));
+  const c=countByStage(visibleItems);
+  const stageCards=PROJECT_STAGES.map((p,i)=>{
+    const items=projectItems().filter(x=>x.pillar===p);
+    const complete=items.filter(x=>isMastered(x.id)).length;
+    const pc=Math.round(items.reduce((sum,x)=>sum+STAGE_W[stOf(x.id)],0)/items.length*100);
     return `<button class="pcard" onclick="pickPillar('${p.id}')">
       <div class="glow" style="background:${p.color}"></div>
-      <div class="pc-ic" style="background:${p.color}">${p.icon}</div>
+      <div class="pc-ic" style="background:${p.color}">${String(i+1).padStart(2,"0")}</div>
       <h3>${p.name}</h3>
       <div class="pc-sub">${p.sub}</div>
-      <div class="pc-line"><span>掌握 ${m}/${its.length}</span><b>${pc}%</b></div>
+      <div class="pc-line"><span>交付 · ${p.deliverable}</span><b>${complete}/${items.length}</b></div>
       <div class="bar sm"><i style="width:${pc}%;background:${p.color}"></i></div>
     </button>`;
   }).join("");
-
-  const list=(mapPillar==="all")?PILLARS:PILLARS.filter(p=>p.id===mapPillar);
+  const stage=PROJECT_STAGES.find(p=>p.id===mapPillar);
+  const stageIndex=PROJECT_STAGES.indexOf(stage);
+  const deliverable=stage?.groups[0].items.find(it=>it.change==="交付物");
+  const prior=PROJECT_STAGES[stageIndex-1]?.groups[0].items.find(it=>it.change==="交付物");
+  const next=PROJECT_STAGES[stageIndex+1];
   const q=mapQuery.trim().toLowerCase();
 
   const groupsHtml=list.map(p=>{
     const inner=p.groups.map((g,gi)=>{
       const raw=g.items.map((it,ii)=>{
-        const id=itemId(p.id,gi,ii), s=stOf(id);
-        if(mapFilter==="todo"&&s===2) return "";
+        const id=it.id||itemId(p.id,gi,ii), s=stOf(id);
+        if(mapFilter==="todo"&&s!==0) return "";
         if(mapFilter==="done"&&s!==2) return "";
         if(mapFilter==="doing"&&s!==1) return "";
         if(q){
-          const hay=(it.t+" "+it.d+" "+it.a+" "+it.k+" "+g.name+" "+it.q).toLowerCase();
+          const hay=(it.t+" "+it.d+" "+it.a+" "+it.k+" "+g.name+" "+it.q+" "+(it.change||"")).toLowerCase();
           if(hay.indexOf(q)<0) return "";
         }
         const pill=s===0?'<span class="pill">未开始</span>'
@@ -1557,48 +1601,55 @@ function renderMap(){
             <div class="c-title">${esc(it.t)}</div>
             <div class="c-act">▶ ${esc(it.a)}</div>
             <div class="c-foot">${pill}<span class="pill">⏱ ${it.m}分</span>
+              ${it.change?`<span class="pill ${it.change==="新增"?"st1":""}">${it.change}</span>`:""}
               ${noteOf(id)?'<span class="pill">📝 笔记</span>':''}
               ${(s===0&&blockedBy({id:id}).length)?`<span class="pill warn">🔒 先学 ${esc(prereqNames({id:id}))}</span>`:''}</div>
           </div>
         </div>`;
       }).join("");
       if(!raw) return "";
-      const gd=g.items.filter((_,ii)=>isMastered(itemId(p.id,gi,ii))).length;
+      const gd=g.items.filter((_,ii)=>isMastered(g.items[ii].id||itemId(p.id,gi,ii))).length;
       return `<div class="group">
-        <div class="group-h"><span>${g.icon}</span>${esc(g.name)}<span class="count">${gd}/${g.items.length}</span></div>
+        ${library?`<div class="group-h"><span>${g.icon}</span>${esc(g.name)}<span class="count">${gd}/${g.items.length}</span></div>`:""}
         <div class="cards">${raw}</div>
       </div>`;
     }).join("");
     if(!inner) return "";
-    return `<div class="sect-h" style="margin-top:22px"><span style="color:${p.color}">${p.icon}</span>${p.name}
-      <span class="sh-sub">${p.sub}</span></div>${inner}`;
+    return mapPillar===p.id?inner:`<div class="sect-h" style="margin-top:22px"><span style="color:${p.color}">${p.icon}</span>${p.name}
+      <span class="sh-sub">${p.deliverable||p.sub}</span></div>${inner}`;
   }).join("");
 
   $("#view").innerHTML=`
+
     ${mapPillar==="all"
-      ? `<div class="sect-h" style="margin-top:10px">🗺️ 三大支柱<span class="sh-sub">点进去看知识点</span></div>
-         <div class="pillars">${pillarsHtml}</div>`
-      : `<button class="btn btn-line btn-sm" style="margin-top:12px" onclick="pickPillar('all')">← 返回三大支柱</button>`}
+      ? `<div class="sect-h" style="margin-top:10px">🗺️ AI 产品项目地图<span class="sh-sub">四个阶段 · 四份交付物</span></div>
+         <div class="panel note" style="margin-bottom:12px">选一个真实场景贯穿四个阶段。可以从「企业知识库问答」或「个人会议跟进」起步。把每阶段的产出或链接存进对应交付物卡片。</div>
+         <div class="pillars">${stageCards}</div>
+         <div class="sect-h">项目动作<span class="sh-sub">新增与调整已标在卡片上</span></div>
+         <button class="btn btn-line btn-sm" onclick="pickPillar('library')">打开资料库 · 旧版知识与笔记</button>`
+      : `<button class="btn btn-line btn-sm" style="margin-top:12px" onclick="pickPillar('all')">← 返回项目地图</button>
+         ${stage? `<div class="sect-h">${stage.icon} ${stage.name}<span class="sh-sub">阶段交付 · ${stage.deliverable}</span></div>
+                   <div class="panel"><div class="note">${stage.sub}。完成后在交付物卡片里记录成果，再标记为已掌握。</div>
+                     <div class="link-row" style="margin-top:10px">
+                       ${prior?`<button class="btn btn-line btn-sm" onclick="openSheet('${prior.id}')">查看上一阶段交付物</button>`:""}
+                       <button class="btn btn-soft btn-sm" onclick="openSheet('${deliverable.id}')">打开${stage.deliverable}</button>
+                       ${next?`<button class="btn btn-line btn-sm" onclick="pickPillar('${next.id}')">下一阶段 · ${next.name}</button>`:""}
+                     </div></div>`
+                 : `<div class="sect-h">📚 资料库<span class="sh-sub">按需查阅</span></div>
+                    <div class="panel note">这里保留了旧版 63 项及其打卡和笔记。经典模型与训练细节、认证、峰会、投放等可以按需查阅；也可手动加入周计划。资料库单独统计。</div>`}`}
 
     <div class="filterbar">
       <div class="search"><span class="ic">🔍</span>
         <input id="mapSearch" placeholder="搜知识点、动作、关键词…" value="${esc(mapQuery)}"
           oninput="onMapSearch(this.value)"/></div>
       <div class="seg">
-        <button class="${mapFilter==='all'?'on':''}" onclick="setMapFilter('all')">全部 ${ITEMS().length}</button>
+        <button class="${mapFilter==='all'?'on':''}" onclick="setMapFilter('all')">全部 ${visibleItems.length}</button>
         <button class="${mapFilter==='doing'?'on':''}" onclick="setMapFilter('doing')">学习中 ${c[1]}</button>
         <button class="${mapFilter==='done'?'on':''}" onclick="setMapFilter('done')">已掌握 ${c[2]}</button>
         <button class="${mapFilter==='todo'?'on':''}" onclick="setMapFilter('todo')">未开始 ${c[0]}</button>
       </div>
     </div>
-    ${groupsHtml||`<div class="empty"><span class="e-ic">🔍</span>没有匹配的知识点，换个词试试</div>`}
-
-    <div class="sect-h">☁️ 视角说明</div>
-    <div class="panel"><div class="note">
-      这张地图是<b>长期刻度</b>，不是待办清单。63 项要按年推进，百分比低是正常的。<br/>
-      它的作用是「不知道学什么的时候来翻」。日常推进请看<b>「今天」</b>。<br/>
-      每张卡片都能看到第一步动作、验收标准和权威入口，点开即用。
-    </div></div>`;
+    ${groupsHtml||`<div class="empty"><span class="e-ic">🔍</span>没有匹配的知识点，换个词试试</div>`}`;
 }
 function pickPillar(p){ mapPillar=p; mapFilter="all"; mapQuery=""; render(); window.scrollTo({top:0,behavior:"smooth"}); }
 function setMapFilter(f){ mapFilter=f; render(); }
@@ -1717,7 +1768,7 @@ function renderMe(){
     </div>
     <div class="panel" style="margin-top:12px">
       <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
-        <span style="color:var(--muted)">体系掌握度（长期刻度，慢慢来）</span><b>${pct}%</b></div>
+        <span style="color:var(--muted)">项目进度（长期刻度，慢慢来）</span><b>${pct}%</b></div>
       <div class="bar"><i style="width:${pct}%;background:linear-gradient(90deg,#6366f1,#ec4899)"></i></div>
       <div class="note" style="margin-top:10px">
         最长连续 <b>${longestStreak()}</b> 天 · 累计有推进 <b>${Object.keys(days).length}</b> 天 ·
@@ -1739,26 +1790,26 @@ function renderMe(){
     <div class="sect-h">🎯 聚焦方向<span class="sh-sub">推荐会优先推这些方向</span></div>
     <div class="panel">
       <div class="note" style="margin-bottom:12px">
-        选 1–2 个你这两周真正想突破的方向，推荐会把它们排到前面。<br/>
-        不选也没关系，那就按全体系顺序推。
+        选 1–2 个想优先推进的项目阶段。<br/>
+        不选时按项目地图顺序和动作时长推荐。
       </div>
-      ${PILLARS.map(p=>`
+      ${PROJECT_STAGES.map(p=>`
         <div style="margin-bottom:13px">
           <div style="font-size:12.5px;font-weight:700;color:${p.color};margin-bottom:7px">${p.icon} ${p.name}</div>
           <div class="radios">
             ${p.groups.map((g,gi)=>{
               const gid=p.id+"-"+gi;
-              const on=(settings.focusGroups||[]).indexOf(gid)>=0;
+              const on=focusGroups().indexOf(gid)>=0;
               const its=ITEMS().filter(x=>groupId(x)===gid);
               const m=its.filter(x=>stOf(x.id)===2).length;
               return `<button class="fg-chip ${on?'on':''}" onclick="toggleFocusGroup('${gid}')">
-                ${esc(g.name)} <span style="opacity:.65;font-weight:600">${m}/${its.length}</span></button>`;
+                优先推进 <span style="opacity:.65;font-weight:600">${m}/${its.length}</span></button>`;
             }).join("")}
           </div>
         </div>`).join("")}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button class="btn btn-line btn-sm" onclick="clearFocusGroups()">清除聚焦方向</button>
-        <span class="note" style="margin:0">已选 ${(settings.focusGroups||[]).length} / 2</span>
+        <span class="note" style="margin:0">已选 ${focusGroups().length} / 2</span>
       </div>
     </div>
 
@@ -1773,7 +1824,7 @@ function renderMe(){
           ${settings.pathMode!==false?'已开启':'已关闭'}</button>
       </div>
       <div class="note" style="margin-top:10px">
-        关掉之后推荐就纯粹按三大支柱轮转，不再考虑先后关系。<br/>
+        关闭后，推荐不再检查动作的前置依赖。<br/>
         无论开关如何，<b>地图里始终可以直接开始任何一个知识点</b>——这只是推荐顺序，不是门禁。
       </div>
     </div>
@@ -1794,7 +1845,7 @@ function renderMe(){
     </div>
 
     <div class="note" style="text-align:center;margin-top:20px">
-      AI 产品经理知识体系 · v2<br/>把「学到哪了」换成「今天做了什么」
+      AI 产品经理知识体系 · 项目版<br/>选场景 → 设计任务 → 接入与执行 → 评测上线
     </div>`;
 }
 
@@ -1855,7 +1906,8 @@ function openSheet(id,keep){
 
     <div class="link-row">
       <button class="btn btn-soft btn-sm" onclick="window.open('https://www.bing.com/search?q=${q}','_blank')">🔍 搜索关键词</button>
-      <button class="btn btn-line btn-sm" onclick="window.open('https://www.bing.com/search?q=${sq}','_blank')">📚 打开入口</button>
+      ${it.url?`<a class="btn btn-line btn-sm" href="${esc(it.url)}" target="_blank" rel="noopener noreferrer">📚 阅读一手资料</a>`:
+        (!it.change?`<button class="btn btn-line btn-sm" onclick="window.open('https://www.bing.com/search?q=${sq}','_blank')">📚 打开入口</button>`:"")}
       <button class="btn btn-line btn-sm" onclick="addToWeek('${id}')">📌 加入本周</button>
     </div>
 
@@ -1877,8 +1929,8 @@ function openSheet(id,keep){
     </div>
 
     <div style="margin-top:15px">
-      <div class="ab-label" style="color:var(--muted)">📝 学习笔记</div>
-      <textarea class="field" id="noteField" placeholder="记下你查到的链接、踩的坑、还没想通的点…"
+      <div class="ab-label" style="color:var(--muted)">📝 ${it.change==="交付物"?"交付物记录":"学习笔记"}</div>
+      <textarea class="field" id="noteField" placeholder="${it.change==="交付物"?"写下成果摘要或粘贴交付物链接…":"记下你查到的链接、踩的坑、还没想通的点…"}"
         oninput="onNote('${id}',this.value)">${esc(noteOf(id))}</textarea>
     </div>`;
   const w=$("#sheetWrap");
@@ -1903,7 +1955,7 @@ function setSetting(k,v){ settings[k]=v; saveSettings(); render(); toast("已保
 function setBudget(n){ settings.focus=n; saveSettings(); swapIdx=0; render(); }
 /* B: 聚焦方向开关 */
 function toggleFocusGroup(gid){
-  if(!settings.focusGroups) settings.focusGroups=[];
+  settings.focusGroups=focusGroups();
   const i=settings.focusGroups.indexOf(gid);
   if(i>=0) settings.focusGroups.splice(i,1);
   else{
