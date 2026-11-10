@@ -128,8 +128,8 @@ phase('数据完整性', null, function(w){
     ['知识点 ID 唯一', dup===0],
     ['每张必修卡有四个带解释的子知识点、学习深度、延伸范围和学成目标', w.theoryItems().every(function(x){return x.item.topics.length===4 && x.item.topics.every(function(pair){return pair[0] && pair[1].length>10;}) && [x.item.depth,x.item.later,x.item.goal].every(function(v){return v.length>10;});})],
     ['ID 规则与 v1 一致（hard-0-0）', w.itemId('hard',0,0)==='hard-0-0'],
-    ['理论卡有判断框架，实操卡有第一步', it.every(function(x){return x.item.concept ? !!x.item.judgment : x.item.a&&x.item.a.length>8;})],
-    ['理论卡有原因和案例，实操卡有验收标准', it.every(function(x){return x.item.concept ? !!(x.item.why&&x.item.case&&x.item.answer) : x.item.k&&x.item.k.length>6;})],
+    ['实操卡保留第一步', it.filter(function(x){return !x.item.topics;}).every(function(x){return x.item.a&&x.item.a.length>8;})],
+    ['理论卡有案例，实操卡有验收标准', it.every(function(x){return x.item.topics ? !!(x.item.case&&x.item.answer) : x.item.k&&x.item.k.length>6;})],
     ['每项都有「搜索关键词」', it.every(function(x){return x.item.q&&x.item.q.length>2;})],
     ['每项都有「权威入口」', it.every(function(x){return x.item.s&&x.item.s.length>3;})],
     ['每项都有时长估计（≥15 分钟）', it.every(function(x){return x.item.m>=15;})],
@@ -262,8 +262,12 @@ phase('理论地图、选修与资料库', {'aippm_progress_v1':JSON.stringify({
   w.onMapSearch('');
   w.openSheet('theory-harness');
   var sheet=w.document.getElementById('sheet'), answer=sheet.querySelector('.case-answer');
-  var theoryContent=['这一项具体学什么','学到多深','延伸阅读','学成目标','概念','为什么重要','如何判断','案例辨析','学习自评'].every(function(text){return sheet.textContent.includes(text);});
+  var coreLabels=Array.from(sheet.querySelectorAll('.theory-copy .ab-label')).map(function(el){return el.textContent;});
+  var theoryContent=coreLabels.join('|')==='这一项具体学什么|学到多深|学成目标';
+  var extra=Array.from(sheet.querySelectorAll('.sheet-extra'));
+  var optionalCollapsed=extra.length===3 && extra.every(function(el){return !el.open;});
   var answerHidden=!answer.open;
+  sheet.querySelector('#sheetCase summary').click();
   answer.querySelector('summary').click();
   var answerRevealed=answer.open;
   w.setStage('theory-harness',2);
@@ -278,7 +282,8 @@ phase('理论地图、选修与资料库', {'aippm_progress_v1':JSON.stringify({
     ['四阶段顺序保留', stages.join(' → ')==='选场景 → 设计任务 → 接入与执行 → 评测上线'],
     ['主线呈现理论卡，项目交付物放在选修', mainOnly],
     ['地图预览子知识点并支持搜索正文', mapPreview && matchesTopic],
-    ['理论卡分别显示学什么、学到多深、学成目标和案例', theoryContent],
+    ['理论卡正文只展示三个核心问题', theoryContent],
+    ['案例、延伸阅读和学习工具默认折叠', optionalCollapsed],
     ['参考判断默认折叠，可主动打开', answerHidden && answerRevealed],
     ['可单独筛出已标记能辨析的知识点', onlyDistinguished],
     ['选修卡保留原实操进度和笔记', keptPractice],
