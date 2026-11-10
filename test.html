@@ -124,11 +124,11 @@ phase('数据完整性', null, function(w){
   var it=w.ITEMS();
   var ids={},dup=0; it.forEach(function(x){ if(ids[x.id])dup++; ids[x.id]=1; });
   return [
-    ['保留 63 项旧资料，另有 18 项项目动作', it.length===81 && w.projectItems().length===18],
+    ['63 项旧资料、18 项选修实操、14 项必修', it.length===95 && w.theoryItems().length===14],
     ['知识点 ID 唯一', dup===0],
     ['ID 规则与 v1 一致（hard-0-0）', w.itemId('hard',0,0)==='hard-0-0'],
-    ['每项都有「第一步动作」', it.every(function(x){return x.item.a&&x.item.a.length>8;})],
-    ['每项都有「验收标准」', it.every(function(x){return x.item.k&&x.item.k.length>6;})],
+    ['理论卡有判断框架，实操卡有第一步', it.every(function(x){return x.item.concept ? !!x.item.judgment : x.item.a&&x.item.a.length>8;})],
+    ['理论卡有原因和案例，实操卡有验收标准', it.every(function(x){return x.item.concept ? !!(x.item.why&&x.item.case&&x.item.answer) : x.item.k&&x.item.k.length>6;})],
     ['每项都有「搜索关键词」', it.every(function(x){return x.item.q&&x.item.q.length>2;})],
     ['每项都有「权威入口」', it.every(function(x){return x.item.s&&x.item.s.length>3;})],
     ['每项都有时长估计（≥15 分钟）', it.every(function(x){return x.item.m>=15;})],
@@ -152,25 +152,27 @@ phase('v1 数据迁移', {
   ];
 });
 
-/* 3. 三态与计分 */
-phase('三态与计分', null, function(w){
-  w.setStage('project-users',1);
-  var a=w.stOf('project-users'), p1=w.weightedPct();
-  w.setStage('project-users',2);
-  var b=w.stOf('project-users'), p2=w.weightedPct();
-  w.setStage('project-users',0);
+
+phase('理论自评与计分', null, function(w){
+  w.setStage('theory-value',1);
+  var p1=w.weightedPct();
+  w.setStage('theory-value',2);
+  var p2=w.weightedPct(), notMastered=!w.isMastered('theory-value');
+  w.setStage('theory-value',3);
+  w.loadAll();
+  var p3=w.weightedPct(), mastered=w.isMastered('theory-value');
+  w.setStage('theory-value',0);
   return [
-    ['标记「学习中」= st 1', a===1],
-    ['学习中记 0.5 分', p1===Math.round(0.5/18*100)],
-    ['标记「已掌握」= st 2', b===2],
-    ['已掌握记 1 分', p2===Math.round(1/18*100)],
-    ['可回退为「未开始」', w.stOf('project-users')===0]
+    ['已理解按 1/3 计分', p1===Math.round(100/3/14)],
+    ['能辨析按 2/3 计分，尚未标为能迁移', p2===Math.round(200/3/14) && notMastered],
+    ['能迁移按满分计入，重载后保留', p3===Math.round(100/14) && mastered],
+    ['可回退为未开始', w.stOf('theory-value')===0]
   ];
 });
 
 /* 4. 专注计时全流程 */
 phase('专注计时', null, function(w){
-  w.startTimer('project-users',25);
+  w.startTimer('theory-value',25);
   var pill=w.document.querySelector('.timer-pill');
   var running=pill && !pill.classList.contains('hidden');
   var rem=w.remainingMs();
@@ -181,7 +183,7 @@ phase('专注计时', null, function(w){
     ['剩余时间≈25 分钟', rem>24*60000 && rem<=25*60000],
     ['结束后计时器清空', w.remainingMs()===0],
     ['结束后胶囊隐藏', pill2 && pill2.classList.contains('hidden')],
-    ['结束后自动标记「学习中」', w.stOf('project-users')===1],
+    ['阅读计时不自动修改理论自评', w.stOf('theory-value')===0],
     ['结束后记录 25 分钟专注', w.minutesOn(w.todayKey())===25],
     ['结束后计入本周专注', w.minutesThisWeek()===25],
     ['结束后记为活跃日（连续天数）', w.streak()>=1]
@@ -200,7 +202,7 @@ phase('周计划与滚入', {
   return [
     ['「从地图挑」一次排入 3 个', n1===3],
     ['再挑一次累加到 6 个（不重复）', n2===6 && dup===0],
-    ['排入的都是「未开始」的项', w.weekItems(w.curWeek()).every(function(id){return w.stOf(id)===0 && id.startsWith('project-');})]
+    ['排入的都是「未开始」的项', w.weekItems(w.curWeek()).every(function(id){return w.stOf(id)===0 && id.startsWith('theory-');})]
   ];
 });
 
@@ -225,15 +227,15 @@ phase('上周遗留滚入', (function(){
 
 phase('C · 前置依赖排序', null, function(w){
   var ids=function(){ return w.candidates().map(function(x){return x.id;}); };
-  var first=ids()[0], fresh=ids().indexOf('project-contract');
-  var unmet=w.blockedBy(w.byId('project-contract'));
-  w.setStage('project-brief',1);
-  var after=ids().indexOf('project-contract');
+  var first=ids()[0], fresh=ids().indexOf('theory-contract');
+  var unmet=w.blockedBy(w.byId('theory-contract'));
+  w.setStage('theory-mode',1);
+  var after=ids().indexOf('theory-contract');
   return [
-    ['全新安装先推荐「选场景」动作', first==='project-users'],
-    ['任务契约以前一阶段的简报为前置', unmet.length===1 && unmet[0].id==='project-brief'],
+    ['全新安装先推荐「选场景」理论', first==='theory-value'],
+    ['任务契约以前一阶段的方案选择为前置', unmet.length===1 && unmet[0].id==='theory-mode'],
     ['前置开始后任务契约排名上升', after<fresh],
-    ['前置满足后不再提示「先学」', w.blockedBy(w.byId('project-contract')).length===0]
+    ['前置满足后不再提示「先学」', w.blockedBy(w.byId('theory-contract')).length===0]
   ];
 });
 
@@ -243,24 +245,39 @@ phase('C · 可关闭依赖排序', {'aippm_settings_v1':JSON.stringify({pathMod
   ];
 });
 
-phase('项目地图与资料库', {'aippm_progress_v1':JSON.stringify({'hard-1-2':{done:true,ts:123,note:'原来的 RAG 笔记'}})}, function(w){
+
+phase('理论地图、选修与资料库', {'aippm_progress_v1':JSON.stringify({
+  'hard-1-2':{done:true,ts:123,note:'原来的 RAG 笔记'},
+  'project-prototype':{st:2,sts:111,note:'原型链接',nts:112,ts:112}
+})}, function(w){
   w.goTab('map');
-  var stages=Array.from(w.document.querySelectorAll('.pcard h3')).map(function(el){return el.textContent;});
+  var view=w.document.getElementById('view');
+  var stages=Array.from(view.querySelectorAll('.pcard h3')).map(function(el){return el.textContent;});
+  var mainOnly=!view.textContent.includes('交付可运行原型') && view.textContent.includes('Agent 与 Harness 的分工');
   w.pickPillar('execute');
-  var hasMCP=w.document.getElementById('view').textContent.includes('接入工具与 MCP');
-  var hasGate=w.document.getElementById('view').textContent.includes('打开可运行原型');
-  w.openSheet('project-prototype');
-  w.onNote('project-prototype','https://example.com/prototype');
-  w.setStage('project-prototype',2);
-  w.loadAll();
+  w.openSheet('theory-harness');
+  var sheet=w.document.getElementById('sheet'), answer=sheet.querySelector('.case-answer');
+  var theoryContent=['概念','为什么重要','如何判断','案例辨析','学习自评'].every(function(text){return sheet.textContent.includes(text);});
+  var answerHidden=!answer.open;
+  answer.querySelector('summary').click();
+  var answerRevealed=answer.open;
+  w.setStage('theory-harness',2);
+  w.setMapFilter('distinguish');
+  var onlyDistinguished=view.querySelectorAll('.card').length===1 && view.textContent.includes('Agent 与 Harness 的分工');
+  w.pickPillar('practice');
+  w.setMapFilter('done');
+  var keptPractice=view.textContent.includes('交付可运行原型') && w.noteOf('project-prototype')==='原型链接';
   w.pickPillar('library');
   w.setMapFilter('done');
   return [
-    ['四阶段按项目顺序展示', stages.join(' → ')==='选场景 → 设计任务 → 接入与执行 → 评测上线'],
-    ['执行阶段有 MCP 和交付物入口', hasMCP && hasGate],
-    ['交付物链接和状态可持久化', w.noteOf('project-prototype')==='https://example.com/prototype' && w.isMastered('project-prototype')],
-    ['资料库已掌握筛选保留旧记录', w.document.getElementById('view').textContent.includes('RAG 检索增强生成') && w.noteOf('hard-1-2')==='原来的 RAG 笔记'],
-    ['资料库条目不占用自动推荐名额', w.candidates().every(function(x){return x.id.startsWith('project-');})]
+    ['四阶段顺序保留', stages.join(' → ')==='选场景 → 设计任务 → 接入与执行 → 评测上线'],
+    ['主线呈现理论卡，项目交付物放在选修', mainOnly],
+    ['理论卡显示解释、判断框架、案例和自评', theoryContent],
+    ['参考判断默认折叠，可主动打开', answerHidden && answerRevealed],
+    ['可单独筛出已标记能辨析的知识点', onlyDistinguished],
+    ['选修卡保留原实操进度和笔记', keptPractice],
+    ['资料库保留旧记录', view.textContent.includes('RAG 检索增强生成') && w.noteOf('hard-1-2')==='原来的 RAG 笔记'],
+    ['自动推荐只包含必修理论', w.candidates().every(function(x){return x.id.startsWith('theory-');})]
   ];
 });
 
@@ -294,7 +311,7 @@ phase('B×C · 聚焦区还被前置卡住时给出解锁提示', {'aippm_settin
   return [
     ['聚焦「设计任务」但整块未就绪时，队首仍是可做的项', w.groupId(w.currentFocus())!=='task-0'],
     ['并给出解锁提示', typeof h==='string' && h.indexOf('解锁')>=0 || h.indexOf('前置')>=0],
-    ['提示点名的是「现在就能做」的根节点', h.indexOf('找出值得解决的任务')>=0],
+    ['提示点名的是「现在就能做」的根节点', h.indexOf('任务价值与可验证性')>=0],
     ['提示不点名中间层（那些本身还被卡住）', h.indexOf('定义任务契约')<0]
   ];
 });
@@ -306,16 +323,17 @@ phase('E · 时长自适应', {'aippm_settings_v1':JSON.stringify({focus:60,path
   var maxLong=Math.max.apply(null,top15.slice(0,5));
   var html=w.document.body.innerHTML;
   return [
-    ['预算 15 分钟时优先推短动作（前 5 项 ≤35 分钟）', maxLong<=35],
-    ['主页按钮文案为「开始 15 分钟」', html.indexOf('开始 15 分钟')>=0],
+    ['预算 15 分钟时优先推适合阅读的知识点', maxLong<=35],
+    ['主页可直接打开知识点阅读', html.indexOf('打开今日知识点')>=0],
     ['时长选项展示 15/25/45/60', html.indexOf('现在有')>=0]
   ];
 });
 
 phase('E · 时间充裕时不干预', {'aippm_settings_v1':JSON.stringify({focus:60,pathMode:true,focusGroups:[]})}, function(w){
-  var top=w.candidates().slice(0,6);
+  w.setStage('theory-value',1);
+  var top=w.candidates().slice(0,3);
   return [
-    ['预算 60 分钟时同优先级回到地图顺序', top[0].id==='project-users' && top[1].id==='project-baseline']
+    ['预算 60 分钟时同优先级回到地图顺序', top[0].id==='theory-value' && top[1].id==='theory-mode' && top[2].id==='theory-baseline']
   ];
 });
 
@@ -415,11 +433,11 @@ phase('推荐依据说明 · 依赖未满足时如实说', null, function(w){
 });
 
 phase('推荐依据说明 · 已开始项', null, function(w){
-  w.setStage('project-users',1);
+  w.setStage('theory-value',1);
   var f=w.currentFocus(), why=stripTags(w.whyFocus(f));
   return [
-    ['焦点仍是刚推进的那一项', f.id==='project-users'],
-    ['说明为「你已经开始了这一项」', why.indexOf('你已经开始了这一项')>=0]
+    ['焦点仍是刚推进的那一项', f.id==='theory-value'],
+    ['说明可继续复习', why.indexOf('可以继续复习')>=0]
   ];
 });
 
@@ -562,7 +580,7 @@ phase('390px 无横向溢出', null, function(w){
   res.push(['地图·接入与执行列表（含🔒先学标记）· 无元素溢出', d.bad.length===0]);
   if(d.bad.length) res.push(['溢出元素：'+d.bad.slice(0,4).join(' | '), false]);
 
-  w.openSheet('project-mcp'); var s=scan();
+  w.openSheet('theory-mcp'); var s=scan();
   res.push(['知识点抽屉 · 无元素溢出', s.bad.length===0]);
   if(s.bad.length) res.push(['溢出元素：'+s.bad.slice(0,4).join(' | '), false]);
   w.closeSheet();
