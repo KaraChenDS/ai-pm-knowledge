@@ -149,24 +149,24 @@ phase('v1 数据迁移', {
     ['{done:true} 迁移为「已掌握」st=2', w.stOf('hard-0-0')===2],
     ['未完成的项保持 st=0', w.stOf('hard-0-1')===0],
     ['旧笔记完整保留', w.noteOf('hard-0-0')==='旧笔记'],
-    ['旧进度仍可查看，项目进度单独计算', w.byId('hard-0-0').item.t==='机器学习核心概念' && w.weightedPct()===0]
+    ['旧进度仍可查看，理论卡独立记录', w.byId('hard-0-0').item.t==='机器学习核心概念' && w.stOf('theory-value')===0]
   ];
 });
 
 
-phase('理论自评与计分', null, function(w){
+phase('理论自评', null, function(w){
   w.setStage('theory-value',1);
-  var p1=w.weightedPct();
+  var p1=w.stOf('theory-value');
   w.setStage('theory-value',2);
-  var p2=w.weightedPct(), notMastered=!w.isMastered('theory-value');
+  var p2=w.stOf('theory-value'), notMastered=!w.isMastered('theory-value');
   w.setStage('theory-value',3);
   w.loadAll();
-  var p3=w.weightedPct(), mastered=w.isMastered('theory-value');
+  var p3=w.stOf('theory-value'), mastered=w.isMastered('theory-value');
   w.setStage('theory-value',0);
   return [
-    ['已理解按 1/3 计分', p1===Math.round(100/3/14)],
-    ['能辨析按 2/3 计分，尚未标为能迁移', p2===Math.round(200/3/14) && notMastered],
-    ['能迁移按满分计入，重载后保留', p3===Math.round(100/14) && mastered],
+    ['已理解记为状态 1', p1===1],
+    ['能辨析独立记录', p2===2 && notMastered],
+    ['能迁移重载后保留', p3===3 && mastered],
     ['可回退为未开始', w.stOf('theory-value')===0]
   ];
 });
@@ -185,67 +185,77 @@ phase('专注计时', null, function(w){
     ['结束后计时器清空', w.remainingMs()===0],
     ['结束后胶囊隐藏', pill2 && pill2.classList.contains('hidden')],
     ['阅读计时不自动修改理论自评', w.stOf('theory-value')===0],
-    ['结束后记录 25 分钟专注', w.minutesOn(w.todayKey())===25],
-    ['结束后计入本周专注', w.minutesThisWeek()===25],
-    ['结束后记为活跃日（连续天数）', w.streak()>=1]
+    ['结束后记录 25 分钟专注', w.payload().sessions[0].min===25],
+    ['结束后计入本周打卡', w.weekActiveDays()===1]
   ];
 });
 
-/* 5. 周计划与滚入 */
-phase('周计划与滚入', {
-  'aippm_plan_v2': JSON.stringify({weeks:{}})
-}, function(w){
-  w.autoPlanWeek();
-  var n1=w.weekItems(w.curWeek()).length;
-  w.autoPlanWeek();
-  var n2=w.weekItems(w.curWeek()).length;
-  var uniq={},dup=0; w.weekItems(w.curWeek()).forEach(function(id){ if(uniq[id])dup++; uniq[id]=1; });
+
+
+phase('提前结束专注与放弃', null, function(w){
+  function seedTimer(elapsed){
+    w.localStorage.setItem('aippm_timer_v1',JSON.stringify({
+      id:'theory-value',min:15,endTs:Date.now()+15*60000-elapsed
+    }));
+    w.loadAll();
+  }
+  seedTimer(30000);
+  w.stopTimer(false);
+  var shortIgnored=w.weekActiveDays()===0 && w.payload().sessions.length===0;
+  seedTimer(120000);
+  w.stopTimer(true);
+  var canceledIgnored=w.weekActiveDays()===0 && w.payload().sessions.length===0;
+  seedTimer(120000);
+  w.stopTimer(false);
   return [
-    ['「从地图挑」一次排入 3 个', n1===3],
-    ['再挑一次累加到 6 个（不重复）', n2===6 && dup===0],
-    ['排入的都是「未开始」的项', w.weekItems(w.curWeek()).every(function(id){return w.stOf(id)===0 && id.startsWith('theory-');})]
+    ['不足一分钟不记入打卡或专注', shortIgnored],
+    ['放弃计时不记入打卡或专注', canceledIgnored],
+    ['有效专注可提前结束并计入打卡', w.weekActiveDays()===1 && w.payload().sessions[0].min===2]
   ];
 });
 
-phase('上周遗留滚入', (function(){
-  var s={}; s['aippm_plan_v2']=JSON.stringify({weeks:(function(){
-    var o={}; o[mondayKey(-1)]={items:['soft-0-0'],goals:[{id:'g1',text:'遗留目标',done:false}],reflection:'',reviewedAt:null};
-    return o;
-  })()});
-  return s;
+phase('继续阅读与每周打卡', (function(){
+  var old=mondayKey(-1), future=new Date();
+  future.setDate(future.getDate()+1);
+  return {'aippm_days_v1':JSON.stringify({[old]:true,[dstr(future)]:true})};
 })(), function(w){
-  var before=w.weekItems(w.curWeek()).length;
-  w.rollover();
-  var items=w.weekItems(w.curWeek()), goals=w.weekGoals(w.curWeek());
+  var doc=w.document;
+  var initial=doc.querySelector('#continueReading').textContent;
+  var onlyCurrent=w.weekActiveDays()===0;
+  w.openSheet('theory-harness');
+  w.loadAll();
+  w.goTab('map');
+  var bookmark=doc.querySelector('#continueReading').textContent;
+  w.setStage('theory-harness',1);
+  w.setStage('theory-harness',2);
+  w.startTimer('theory-harness',15);
+  w.finishTimer();
+  var countAfter=w.weekActiveDays(), kpi=doc.querySelector('#weekKpi').textContent;
   return [
-    ['滚入上周未完成的动作', items.indexOf('soft-0-0')>=0],
-    ['滚入上周未完成的目标', goals.length===1 && goals[0].text==='遗留目标'],
-    ['滚入后本周多了一项', items.length===before+1]
+    ['首次阅读从地图第一项开始', initial==='任务价值与可验证性'],
+    ['继续阅读记住最近打开的理论卡', bookmark==='Agent 与 Harness 的分工'],
+    ['上周与未来日期不计入本周', onlyCurrent],
+    ['同一天多次自评与专注只打卡一次', countAfter===1],
+    ['地图顶部显示 5 天目标与当前值', kpi.includes('1 / 5 天')],
+    ['完成专注不改动已有自评', w.stOf('theory-harness')===2]
   ];
 });
 
-/* 6. C — 前置依赖排序 */
-
-phase('C · 前置依赖排序', null, function(w){
-  var ids=function(){ return w.candidates().map(function(x){return x.id;}); };
-  var first=ids()[0], fresh=ids().indexOf('theory-contract');
-  var unmet=w.blockedBy(w.byId('theory-contract'));
-  w.setStage('theory-mode',1);
-  var after=ids().indexOf('theory-contract');
+phase('旧周计划只读归档', {'aippm_plan_v2':JSON.stringify({weeks:{
+  [mondayKey(-1)]:{items:['theory-value','soft-0-0'],goals:[{id:'g1',text:'旧目标',done:true}],reflection:'保留的复盘正文'}
+}})}, function(w){
+  w.goTab('me');
+  var doc=w.document, view=doc.getElementById('view');
+  var archived=view.textContent.includes('旧目标') && view.textContent.includes('保留的复盘正文');
+  var item=Array.from(view.querySelectorAll('details button')).find(function(el){return el.textContent==='任务价值与可验证性';});
+  item.click();
+  var sheet=doc.getElementById('sheet');
   return [
-    ['全新安装先推荐「选场景」理论', first==='theory-value'],
-    ['任务契约以前一阶段的方案选择为前置', unmet.length===1 && unmet[0].id==='theory-mode'],
-    ['前置开始后任务契约排名上升', after<fresh],
-    ['前置满足后不再提示「先学」', w.blockedBy(w.byId('theory-contract')).length===0]
+    ['设置可查阅旧周目标与周复盘原文', archived],
+    ['旧周计划可打开原卡并以只读方式显示', sheet.querySelector('#noteField').readOnly && !sheet.querySelector('.stage-btn')],
+    ['旧周计划没有排课或滚入操作', !view.textContent.includes('滚入本周') && !view.textContent.includes('自动排')]
   ];
 });
-
-phase('C · 可关闭依赖排序', {'aippm_settings_v1':JSON.stringify({pathMode:false,focusGroups:['task-0']})}, function(w){
-  return [
-    ['关闭后可先推荐聚焦阶段的任务', w.groupId(w.currentFocus())==='task-0']
-  ];
-});
-
 
 phase('理论地图、选修与资料库', {'aippm_progress_v1':JSON.stringify({
   'hard-1-2':{done:true,ts:123,note:'原来的 RAG 笔记'},
@@ -288,167 +298,26 @@ phase('理论地图、选修与资料库', {'aippm_progress_v1':JSON.stringify({
     ['可单独筛出已标记能辨析的知识点', onlyDistinguished],
     ['选修卡保留原实操进度和笔记', keptPractice],
     ['资料库保留旧记录', view.textContent.includes('RAG 检索增强生成') && w.noteOf('hard-1-2')==='原来的 RAG 笔记'],
-    ['自动推荐只包含必修理论', w.candidates().every(function(x){return x.id.startsWith('theory-');})]
+    ['归档卡片仅供查阅', (w.openSheet('hard-1-2'), sheet.querySelector('#noteField').readOnly)]
   ];
 });
 
-/* 7. B — 聚焦方向 */
-phase('B · 聚焦方向优先', {'aippm_settings_v1':JSON.stringify({focusGroups:['scenario-0']})}, function(w){
-  var head=w.currentFocus();
-  var inGroup=w.groupId(head)==='scenario-0';
-  var top2=w.candidates().slice(0,2).every(function(x){return w.groupId(x)==='scenario-0';});
-  return [
-    ['选中「选场景」后队首属于该方向', inGroup],
-    ['该方向占满推荐前 2 位（该方向已就绪的项）', top2]
-  ];
-});
 
-phase('B · 最多选 2 个方向', null, function(w){
+phase('导航与设置', null, function(w){
+  var doc=w.document;
+  var nav=Array.from(doc.querySelectorAll('#bottomNav button')).map(function(el){return el.textContent.trim().replace(/\s+/g,' ');});
+  var isMap=doc.getElementById('abTitle').textContent==='学习地图' && !!doc.getElementById('weekKpi');
   w.goTab('me');
-  w.toggleFocusGroup('scenario-0');
-  w.toggleFocusGroup('task-0');
-  var n2=w.document.querySelectorAll('.fg-chip.on').length;
-  w.toggleFocusGroup('execute-0');   // 第 3 个应被拒绝
-  var n3=w.document.querySelectorAll('.fg-chip.on').length;
+  var view=doc.getElementById('view');
+  var settingsOnly=['历史资料','多端云同步','导出备份'].every(function(text){return view.textContent.includes(text);});
+  var before=doc.documentElement.dataset.theme;
+  var themeButton=Array.from(view.querySelectorAll('button')).find(function(el){return el.textContent.includes('深浅色');});
+  themeButton.click();
   return [
-    ['可以选满 2 个方向', n2===2],
-    ['选满后第 3 个被拒绝', n3===2],
-    ['设置页列出了四个项目阶段', w.document.querySelectorAll('.fg-chip').length===4]
-  ];
-});
-
-phase('B×C · 聚焦区还被前置卡住时给出解锁提示', {'aippm_settings_v1':JSON.stringify({focusGroups:['task-0']})}, function(w){
-  var h=w.focusUnlock();
-  return [
-    ['聚焦「设计任务」但整块未就绪时，队首仍是可做的项', w.groupId(w.currentFocus())!=='task-0'],
-    ['并给出解锁提示', typeof h==='string' && h.indexOf('解锁')>=0 || h.indexOf('前置')>=0],
-    ['提示点名的是「现在就能做」的根节点', h.indexOf('任务价值与可验证性')>=0],
-    ['提示不点名中间层（那些本身还被卡住）', h.indexOf('定义任务契约')<0]
-  ];
-});
-
-/* 8. E — 时长自适应 */
-phase('E · 时长自适应', {'aippm_settings_v1':JSON.stringify({focus:60,pathMode:true,focusGroups:[]})}, function(w){
-  w.setBudget(15);
-  var top15=w.candidates().slice(0,6).map(function(x){return x.item.m;});
-  var maxLong=Math.max.apply(null,top15.slice(0,5));
-  var html=w.document.body.innerHTML;
-  return [
-    ['预算 15 分钟时优先推适合阅读的知识点', maxLong<=35],
-    ['主页可直接打开知识点阅读', html.indexOf('打开今日知识点')>=0],
-    ['时长选项展示 15/25/45/60', html.indexOf('现在有')>=0]
-  ];
-});
-
-phase('E · 时间充裕时不干预', {'aippm_settings_v1':JSON.stringify({focus:60,pathMode:true,focusGroups:[]})}, function(w){
-  w.setStage('theory-value',1);
-  var top=w.candidates().slice(0,3);
-  return [
-    ['预算 60 分钟时同优先级回到地图顺序', top[0].id==='theory-value' && top[1].id==='theory-mode' && top[2].id==='theory-baseline']
-  ];
-});
-
-/* 9. A — 「换一个」偏移量 */
-phase('A · 换一个不跳焦', null, function(w){
-  var a=w.currentFocus();
-  w.swapFocus();
-  var b=w.currentFocus();
-  w.setStage(b.id,1);
-  var c=w.currentFocus();
-  return [
-    ['「换一个」能切到不同项', a.id!==b.id],
-    ['标记学习中后焦点不跳走（仍是同一项）', c.id===b.id],
-    ['偏移量已重置', true]
-  ];
-});
-
-/* 10. 渲染与交互 */
-phase('渲染与交互', null, function(w){
-  var errs=[];
-  w.goTab('today');
-  var todayOk=w.document.body.innerHTML.indexOf('今日承诺')>=0 || w.document.body.innerHTML.indexOf('今日已完成')>=0;
-  ['today','map','plan','me'].forEach(function(t){ try{ w.goTab(t); }catch(e){ errs.push(t+':'+e.message); } });
-  var tabsOk=errs.length===0;
-  var sheetErr='';
-  try{ w.openSheet('hard-1-2'); }catch(e){ sheetErr=e.message; }
-  var sheetOpen=w.document.getElementById('sheetWrap').classList.contains('open');
-  var sheetHasAction=w.document.getElementById('sheet').innerHTML.indexOf('第一步就做这个')>=0;
-  try{ w.closeSheet(); }catch(e){}
-  return [
-    ['四个标签页渲染无异常', tabsOk],
-    ['抽屉可打开', sheetOpen],
-    ['抽屉里有「第一步就做这个」', sheetHasAction],
-    ['抽屉打开无异常', sheetErr===''],
-    ['今日承诺卡渲染', todayOk]
-  ];
-});
-
-phase('深浅色切换', null, function(w){
-  var top=w.document.querySelector('.appbar .theme-btn');
-  var rail=w.document.querySelector('.rail .theme-btn');
-  w.toggleTheme();
-  var dark=w.document.documentElement.getAttribute('data-theme')==='dark';
-  var t1=top.textContent, r1=rail.querySelector('.rn-ic').textContent;
-  w.toggleTheme();
-  var light=w.document.documentElement.getAttribute('data-theme')==='light';
-  return [
-    ['存在顶栏与侧栏两个主题开关', !!top && !!rail],
-    ['可切到深色', dark],
-    ['切到深色后两个开关图标都变成 ☀️', t1==='☀️' && r1==='☀️'],
-    ['可切回浅色', light],
-    ['侧栏开关仍保留「深浅色」文字', rail.textContent.indexOf('深浅色')>=0]
-  ];
-});
-
-/* 10.5 「为什么是它」推荐依据说明 */
-var stripTags=function(s){ return String(s).replace(/<[^>]+>/g,''); };
-
-phase('推荐依据说明 · 默认', {'aippm_settings_v1':JSON.stringify({focus:25,focusGroups:[],pathMode:true})}, function(w){
-  w.goTab('today');
-  var html=w.document.body.innerHTML, f=w.currentFocus(), why=stripTags(w.whyFocus(f));
-  return [
-    ['今天页显示「为什么是它」', html.indexOf('为什么是它')>=0],
-    ['说明了前置状态', why.indexOf('前置')>=0],
-    ['说明了时长与预算的关系', why.indexOf('分钟')>=0],
-    ['标注了在待推进项里的名次', why.indexOf('排第')>=0],
-    ['没有未满足前置时，不会瞎说有前置', why.indexOf('还有前置没开始')<0]
-  ];
-});
-
-phase('推荐依据说明 · 聚焦生效', {'aippm_settings_v1':JSON.stringify({focus:25,focusGroups:['scenario-0'],pathMode:true})}, function(w){
-  var f=w.currentFocus(), why=stripTags(w.whyFocus(f));
-  return [
-    ['聚焦推上来的项确实属于该方向', w.groupId(f)==='scenario-0'],
-    ['说明里点名了聚焦方向', why.indexOf('聚焦方向')>=0]
-  ];
-});
-
-phase('推荐依据说明 · 时长超预算', {'aippm_settings_v1':JSON.stringify({focus:60,focusGroups:['scenario-0'],pathMode:true})}, function(w){
-  var f=w.currentFocus(), why=stripTags(w.whyFocus(f));
-  return [
-    ['时间充裕时说明不按时长筛', why.indexOf('时间充裕')>=0],
-    ['同时仍说明聚焦方向（两条理由并存）', why.indexOf('聚焦方向')>=0],
-    ['不再输出「已是最短的一档」这类时长比较', why.indexOf('最短的一档')<0]
-  ];
-});
-
-phase('推荐依据说明 · 依赖未满足时如实说', null, function(w){
-  var c=w.candidates();
-  var blocked=c.filter(function(x){ return w.blockedBy(x).length>0; })[0];
-  var why=stripTags(w.whyFocus(blocked));
-  return [
-    ['存在被前置卡住的项', !!blocked],
-    ['说明里如实点名「还有前置没开始」', why.indexOf('还有前置没开始')>=0],
-    ['并写出了具体缺哪一项', /还有前置没开始：[^·]+/.test(why)]
-  ];
-});
-
-phase('推荐依据说明 · 已开始项', null, function(w){
-  w.setStage('theory-value',1);
-  var f=w.currentFocus(), why=stripTags(w.whyFocus(f));
-  return [
-    ['焦点仍是刚推进的那一项', f.id==='theory-value'],
-    ['说明可继续复习', why.indexOf('可以继续复习')>=0]
+    ['默认首页是学习地图', isMap],
+    ['导航仅有学习地图和设置', nav.length===2 && nav[0].includes('学习地图') && nav[1].includes('设置')],
+    ['设置包含同步、备份和历史资料', settingsOnly],
+    ['设置中可切换深浅色', doc.documentElement.dataset.theme!==before]
   ];
 });
 
@@ -579,16 +448,16 @@ phase('390px 无横向溢出', null, function(w){
     return {w:de.scrollWidth,c:de.clientWidth,bad:bad};
   }
   var res=[], t=scan();
-  res.push(['今天页 · 文档宽度 = 视口宽度', t.w<=t.c+1]);
-  res.push(['今天页 · 无元素溢出', t.bad.length===0]);
-  res.push(['底部导航有 4 个标签', w.document.querySelectorAll('.bottomnav button').length===4]);
+  res.push(['首页 · 文档宽度 = 视口宽度', t.w<=t.c+1]);
+  res.push(['首页 · 无元素溢出', t.bad.length===0]);
+  res.push(['底部导航有 2 个标签', w.document.querySelectorAll('.bottomnav button').length===2]);
 
   w.goTab('map'); var m=scan();
   res.push(['地图首页 · 无元素溢出', m.bad.length===0]);
   if(m.bad.length) res.push(['溢出元素：'+m.bad.slice(0,4).join(' | '), false]);
 
   w.pickPillar('execute'); var d=scan();
-  res.push(['地图·接入与执行列表（含🔒先学标记）· 无元素溢出', d.bad.length===0]);
+  res.push(['地图·接入与执行列表· 无元素溢出', d.bad.length===0]);
   if(d.bad.length) res.push(['溢出元素：'+d.bad.slice(0,4).join(' | '), false]);
 
   w.openSheet('theory-mcp'); var s=scan();
@@ -596,11 +465,8 @@ phase('390px 无横向溢出', null, function(w){
   if(s.bad.length) res.push(['溢出元素：'+s.bad.slice(0,4).join(' | '), false]);
   w.closeSheet();
 
-  w.goTab('plan'); var pl=scan();
-  res.push(['计划页 · 无元素溢出', pl.bad.length===0]);
-
   w.goTab('me'); var me=scan();
-  res.push(['我的页（含聚焦方向选择）· 无元素溢出', me.bad.length===0]);
+  res.push(['设置页· 无元素溢出', me.bad.length===0]);
   if(me.bad.length) res.push(['溢出元素：'+me.bad.slice(0,4).join(' | '), false]);
 
   // 折叠面板默认不渲染子元素，必须展开后再扫一次，否则是测试盲区

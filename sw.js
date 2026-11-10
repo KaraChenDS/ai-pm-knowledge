@@ -1,7 +1,7 @@
 /* AI 产品经理知识体系 · Service Worker
    策略：network-first（保证拿到最新版），失败时回退缓存（断网 / 弱网可用）
    只缓存同源的静态资源，不碰 GitHub API 的同步请求。 */
-const CACHE = "ai-pm-kb-v8";
+const CACHE = "ai-pm-kb-v9";
 const ASSETS = [
   "./",
   "./index.html",

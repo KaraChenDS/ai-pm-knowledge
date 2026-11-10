@@ -347,6 +347,13 @@
   .study-topics{padding-left:21px;margin:8px 0 12px}
   .study-topics li+li{margin-top:7px}
   .study-depth{margin:10px 0}
+  .map-overview{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px}
+  @media(max-width:599px){.map-overview{grid-template-columns:1fr;gap:12px}}
+  .week-kpi-head{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px}
+  .week-kpi-head strong{color:var(--accent)}
+  .week-kpi .bar i{background:var(--accent)}
+  .week-kpi .note{margin-top:5px}
+  .archive-reflection{white-space:pre-wrap;overflow-wrap:anywhere}
   .study-preview{font-size:12px;color:var(--muted);line-height:1.55;margin-top:4px}
   .sheet-extra{margin-bottom:10px;border:1px solid var(--border);border-radius:12px;padding:8px 12px}
   .sheet-extra>summary{padding:3px 0;cursor:pointer;font-weight:650;font-size:13.5px}
@@ -438,50 +445,20 @@
       <div class="b-mark">🤖</div>
       <div style="flex:1;min-width:0">
         <h1>AI 产品经理知识体系</h1>
-        <p>今天做什么，而不是学到哪了</p>
+        <p>能持续更新的学习手册</p>
       </div>
     </div>
     <nav class="rail-nav" id="railNav"></nav>
     <div class="rail-bottom">
-      <button class="rail-link sync-chip off" onclick="manualSync()">
-        <span class="rn-ic">☁️</span><span class="sc-tx">未连接</span></button>
-      <button class="rail-link theme-btn" onclick="toggleTheme()">
-        <span class="rn-ic">🌙</span><span>深浅色</span></button>
       <button class="timer-pill hidden" onclick="openTimerSheet()"></button>
-    <div class="rail-foot">
-      <div class="rf-top">
-        <div class="ring" style="width:64px;height:64px;flex:0 0 auto">
-          <svg width="64" height="64" viewBox="0 0 64 64">
-            <circle cx="32" cy="32" r="27" fill="none" stroke="var(--ring-track)" stroke-width="7"/>
-            <circle id="ringFill" cx="32" cy="32" r="27" fill="none" stroke="url(#rgrad)" stroke-width="7"
-              stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="169.6"
-              style="transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)"/>
-            <defs><linearGradient id="rgrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#ec4899"/>
-            </linearGradient></defs>
-          </svg>
-          <div class="pct" id="ringPct">0%</div>
-        </div>
-        <div>
-          <div style="font-size:12.5px;font-weight:700">理论学习进度</div>
-          <div style="font-size:11.5px;color:var(--muted)" id="ringSub">0 项能迁移</div>
-        </div>
-      </div>
-      <div class="bar sm"><i id="ringBar" style="width:0%;background:linear-gradient(90deg,#6366f1,#ec4899)"></i></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:9px;line-height:1.7">
-        这是长期刻度，慢是正常的。<br/>看「今天」就够了。
-      </div>
-    </div>
     </div>
   </aside>
 
   <div class="main">
     <header class="appbar" id="appbar">
-      <div class="ab-title" id="abTitle">今天</div>
+      <div class="ab-title" id="abTitle">学习地图</div>
       <div class="ab-actions">
         <button class="timer-pill hidden" id="timerPillTop" onclick="openTimerSheet()"></button>
-        <button class="sync-chip off" onclick="manualSync()" title="点击立即同步"><span class="sc-ic">☁️</span><span class="sc-tx">未连接</span></button>
-        <button class="icon-btn theme-btn" id="themeBtn" title="切换深浅色">🌙</button>
       </div>
     </header>
     <div id="syncBanner" class="hidden" style="margin-top:12px"></div>
@@ -866,89 +843,6 @@ const THEORY = [
   ]}]}
 ];
 
-/* =====================================================================
-   前置依赖图：id -> [必须先「开始过」的 id]
-   只影响「推荐顺序」，不锁死任何入口 —— 地图里随时能直接开任何一项。
-   判定标准是前置项达到「学习中」而非「已掌握」，避免卡死。
-   ===================================================================== */
-const PREREQ = {
-  "theory-mode":["theory-value"],
-  "theory-baseline":["theory-value"],
-  "theory-contract":["theory-mode"],
-  "theory-agent":["theory-contract"],
-  "theory-context":["theory-contract"],
-  "theory-memory":["theory-context"],
-  "theory-harness":["theory-agent"],
-  "theory-mcp":["theory-harness"],
-  "theory-retrieval":["theory-context"],
-  "theory-trust":["theory-mcp"],
-  "theory-evals":["theory-harness"],
-  "theory-tradeoffs":["theory-evals"],
-  "theory-rollout":["theory-evals"],
-  "project-mode":["project-users"],
-  "project-brief":["project-mode","project-baseline"],
-  "project-contract":["project-brief"],
-  "project-agent":["project-contract"],
-  "project-context":["project-contract"],
-  "project-memory":["project-contract"],
-  "project-spec":["project-agent","project-context","project-memory"],
-  "project-mcp":["project-spec"],
-  "project-retrieval":["project-spec"],
-  "project-harness":["project-mcp"],
-  "project-safety":["project-mcp"],
-  "project-prototype":["project-harness","project-safety","project-retrieval"],
-  "project-evals":["project-prototype"],
-  "project-metrics":["project-evals"],
-  "project-rollout":["project-evals"],
-  "project-decision":["project-metrics","project-rollout"],
-  /* 硬实力 · AI/ML 基础 */
-  "hard-0-1":["hard-0-0"],              // 深度学习    <- 机器学习核心概念
-  "hard-0-2":["hard-0-1"],              // NLP         <- 深度学习
-  "hard-0-3":["hard-0-1"],              // CV/多模态   <- 深度学习
-  /* 硬实力 · 大模型与生成式 AI */
-  "hard-1-0":["hard-0-1"],              // LLM 原理    <- 深度学习
-  "hard-1-1":["hard-1-0"],              // Prompt      <- LLM 原理
-  "hard-1-2":["hard-1-1"],              // RAG         <- Prompt
-  "hard-1-3":["hard-1-1"],              // Agent       <- Prompt
-  "hard-1-4":["hard-1-0"],              // 微调        <- LLM 原理
-  "hard-1-5":["hard-1-1"],              // 多模态生成  <- Prompt
-  "hard-1-6":["hard-1-0"],              // 评测体系    <- LLM 原理
-  /* 硬实力 · 数据能力 */
-  "hard-2-2":["hard-2-0"],              // 实验与因果  <- 数据分析
-  /* 硬实力 · 技术与工程 */
-  "hard-3-2":["hard-3-0","hard-1-0"],   // 部署/MLOps  <- API + LLM 原理
-  /* 硬实力 · 产品基本功 */
-  "hard-4-2":["hard-4-0"],              // 原型        <- PRD
-  "hard-4-3":["hard-4-0","hard-1-0"],   // AI 交互范式 <- PRD + LLM 原理
-  /* 硬实力 · 商业化 */
-  "hard-5-0":["hard-1-0"],              // 成本核算    <- LLM 原理
-  "hard-5-1":["hard-5-0"],              // 定价        <- 成本核算
-  "hard-5-2":["hard-5-0"],              // ROI         <- 成本核算
-
-  /* 软实力 · 获客与增长 */
-  "soft-0-3":["soft-0-0"],              // 渠道投放    <- 增长黑客
-  "soft-0-4":["soft-0-1"],              // 社区私域    <- 用户运营
-  /* 软实力 · 沟通与表达 */
-  "soft-1-1":["soft-1-0"],              // 演讲        <- 结构化表达
-  "soft-1-3":["soft-1-2"],              // 谈判        <- 跨部门协作
-  "soft-1-4":["soft-1-0"],              // 商务写作    <- 结构化表达
-  /* 软实力 · 用户洞察 */
-  "soft-2-1":["soft-2-0"],              // 需求洞察    <- 用户访谈
-  /* 软实力 · 领导力 */
-  "soft-3-1":["soft-3-0"],              // 团队领导    <- 项目管理
-  /* 软实力 · 个人品牌 */
-  "soft-4-1":["soft-4-0"],              // 个人 IP     <- 行业认知
-
-  /* 社会化实践 */
-  "practice-0-1":["hard-1-0"],          // 云厂商认证  <- LLM 原理
-  "practice-0-2":["soft-3-0"],          // PMP 认证    <- 项目管理
-  "practice-1-4":["hard-1-0"],          // 学术会议    <- LLM 原理
-  "practice-2-1":["soft-1-4"],          // 技术写作    <- 商务写作
-  "practice-2-3":["hard-1-1"],          // 黑客松      <- Prompt
-  "practice-2-5":["hard-1-2"]           // 实战项目    <- RAG（毕业设计）
-};
-
-/* ============ 状态键 ============ */
 const STORE_KEY="aippm_progress_v1";     // 键名保留，旧数据可无缝迁移
 const PLAN_KEY ="aippm_plan_v2";
 const DAYS_KEY ="aippm_days_v1";
@@ -957,17 +851,17 @@ const TIMER_KEY="aippm_timer_v1";
 const THEME_KEY="aippm_theme";
 const SET_KEY  ="aippm_settings_v1";
 const RESET_KEY="aippm_reset_v1";
+const READ_KEY="aippm_last_read";
 
 let progress = {};          // id -> {st, ts, note}；理论卡自评为 0–3
 let plan     = { weeks:{} }; // weeks[周一日期] -> {items:[id], goals:[], reflection, reviewedAt}
 let days     = {};          // "YYYY-MM-DD" -> true（有实质推进的日子）
 let sessions = [];          // [{uid, id, min, ts}]
 let timer    = null;        // {id, endTs, min}
-let settings = { daily:1, weekly:3, focus:25, focusGroups:[], pathMode:true };
+let settings = {focus:25};
 let resetAt = 0;            // 「清空全部数据」的时刻，比它旧的记录一律丢弃（让清空能跨设备生效）
-let activeTab = "today";
+let activeTab = "map", lastReadId = "";
 let mapPillar = "all", mapFilter = "all", mapQuery = "";
-let swapIdx   = 0;
 
 const STAGE_NAME=["未开始","学习中","已掌握"];
 const THEORY_LEVELS=["未开始","已理解","能辨析","能迁移"];
@@ -976,6 +870,7 @@ const THEORY_LEVELS=["未开始","已理解","能辨析","能迁移"];
 function dstr(d){ d=d||new Date();
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function loadAll(){
+  lastReadId=localStorage.getItem(READ_KEY)||"";
   try{ progress=JSON.parse(localStorage.getItem(STORE_KEY))||{}; }catch(e){ progress={}; }
   // v1 迁移：{done:true, ts, note} -> {st:2, ts, note}
   let migrated=false;
@@ -1074,76 +969,13 @@ function writeRec(id,patch){
   progress[id]=r;
   return r;
 }
-function groupId(x){ return x.pillar.id+"-"+x.gi; }
-function focusGroups(){
-  return (settings.focusGroups||[]).filter(id=>THEORY.some(p=>id===p.id+"-0"));
-}
-function groupShort(gid){
-  const stage=THEORY.find(p=>gid===p.id+"-0");
-  return stage ? stage.name : gid;
-}
-/* 前置项是否都已「开始过」（≥ 学习中） */
-function prereqMet(x){
-  const pre=PREREQ[x.id];
-  if(!pre||!pre.length) return true;
-  for(let i=0;i<pre.length;i++){ if(stOf(pre[i])<1) return false; }
-  return true;
-}
-/* 返回尚未满足的前置项对象列表，用于提示「建议先学」 */
-function blockedBy(x){
-  const pre=PREREQ[x.id]||[];
-  return pre.filter(id=>stOf(id)<1).map(byId).filter(Boolean);
-}
-function prereqNames(x){
-  return blockedBy(x).map(p=>p.item.t).join("、");
-}
-/* 沿依赖链向下找「现在就能做」的根节点。
-   例如从「RAG」出发会走回「机器学习核心概念」，而不是停在中间那层。 */
-function prereqFrontier(ids){
-  const seen={}, out=[];
-  function walk(id){
-    if(seen[id]) return;
-    seen[id]=1;
-    const x=byId(id);
-    if(!x || stOf(id)>=1) return;              // 不存在或已开始 → 不用管
-    const miss=blockedBy(x);
-    if(!miss.length){                          // 没有未满足的前置 → 现在就能做
-      if(out.indexOf(x)<0) out.push(x);
-      return;
-    }
-    miss.forEach(p=>walk(p.id));
-  }
-  (ids||[]).forEach(walk);
-  return out;
-}
-/* B×C 的交汇处：聚焦方向整个还在等前置时，告诉你怎么解锁它 */
-function focusUnlock(){
-  const fg=focusGroups()[0];
-  if(!fg) return "";
-  const mine=theoryItems().filter(x=>groupId(x)===fg && stOf(x.id)===0);
-  if(!mine.length || mine.some(x=>prereqMet(x))) return "";
-  const roots=prereqFrontier(mine.map(x=>x.id));
-  if(!roots.length) return "";
-  return `<div class="hint-line warn" style="margin-top:12px"><span>🎯</span><span>
-    聚焦方向「<b>${esc(groupShort(fg))}</b>」整块都还在等前置，所以现在推给你的还是别的方向。<br/>
-    但只要先做掉 <b>${esc(roots.map(p=>p.item.t).join("、"))}</b>，这条路就会打开。
-    <div style="margin-top:9px"><button class="btn btn-line btn-sm" onclick="planUnlock('${fg}')">把它加入本周</button></div>
-  </span></div>`;
-}
-function planUnlock(fg){
-  const mine=theoryItems().filter(x=>groupId(x)===fg && stOf(x.id)===0);
-  const roots=prereqFrontier(mine.map(x=>x.id));
-  if(!roots.length) return;
-  addToWeek(roots[0].id);
-}
-
 /* ============ 日期 / 周 ============ */
 function todayKey(){ return dstr(new Date()); }
 function mondayOf(d){ const t=new Date(d); t.setHours(0,0,0,0);
   const dow=(t.getDay()+6)%7; t.setDate(t.getDate()-dow); return t; }
 function weekKey(){ return dstr(mondayOf(new Date())); }
-function weekKeyOf(off){ const m=mondayOf(new Date()); m.setDate(m.getDate()+off*7); return dstr(m); }
-function weekLabel(k){ const s=new Date(k+"T00:00:00"), e=new Date(s.getTime()+6*864e5);
+function weekLabel(k){ const s=new Date(k+"T00:00:00"), e=new Date(s);
+  e.setDate(e.getDate()+6);
   return (s.getMonth()+1)+"/"+s.getDate()+" – "+(e.getMonth()+1)+"/"+e.getDate(); }
 /* 周数据的可合并结构：
      week.items : { [itemId]: 时刻 }   正数=已排入，负数=已移除（墓碑）
@@ -1167,12 +999,6 @@ function normalizeWeek(w){
   if(w.reflectionAt==null) w.reflectionAt=0;
   return w;
 }
-function ensureWeek(k){
-  k=k||weekKey();
-  if(!plan.weeks[k]) plan.weeks[k]={items:{},goals:{},reflection:"",reflectionAt:0,reviewedAt:null,rolledAt:null};
-  return normalizeWeek(plan.weeks[k]);
-}
-function curWeek(){ return ensureWeek(weekKey()); }
 function weekItems(w){
   if(!w) return [];
   if(Array.isArray(w.items)) return w.items.slice();          // 兼容未迁移的旧格式
@@ -1187,174 +1013,46 @@ function weekGoals(w){
       cts:m[k].cts||m[k].ts||0,ts:m[k].ts||0}))
     .filter(g=>!m[g.id].del).sort((a,b)=>(a.cts-b.cts)||(a.ts-b.ts));
 }
-function inWeek(w,id){ return !!w&&!!w.items&&w.items[id]>0; }
-function planAdd(id){ const w=curWeek(); w.items[id]=Date.now(); savePlan(); }
-function planRemove(id){ const w=curWeek(); w.items[id]=-Date.now(); savePlan(); }
-
 /* ============ 统计 ============ */
 function markedDay(){ days[todayKey()]=true; saveDays(); }
-function weightedPct(){
-  const items=theoryItems(), total=items.length;
-  const got=items.reduce((sum,x)=>sum+stOf(x.id)/3,0);
-  return total?Math.round(got/total*100):0;
-}
 function countByStage(items=theoryItems()){ const c=[0,0,0,0]; items.forEach(x=>c[stOf(x.id)]++); return c; }
-function progressedToday(){
-  const t=todayKey();
-  return ITEMS().filter(x=>{ const p=progress[x.id];
-    return p&&p.sts&&p.st>=1&&dstr(new Date(p.sts))===t; }).length;
-}
-function minutesOn(k){ return sessions.filter(s=>dstr(new Date(s.ts))===k).reduce((a,b)=>a+(b.min||0),0); }
-function minutesThisWeek(){
-  const ws=new Date(weekKey()+"T00:00:00").getTime(), we=ws+7*864e5;
-  return sessions.filter(s=>s.ts>=ws&&s.ts<we).reduce((a,b)=>a+(b.min||0),0);
-}
-function streak(){
-  let n=0; const d=new Date();
-  if(!days[dstr(d)]) d.setDate(d.getDate()-1);
-  while(days[dstr(d)]){ n++; d.setDate(d.getDate()-1); }
-  return n;
-}
-function longestStreak(){
-  const keys=Object.keys(days).sort(); let best=0,run=0,prev=null;
-  keys.forEach(k=>{
-    const t=new Date(k+"T00:00:00").getTime();
-    run=(prev!==null&&t-prev===864e5)?run+1:1;
-    prev=t; if(run>best) best=run;
-  });
-  return best;
-}
 function weekActiveDays(){
-  const ws=new Date(weekKey()+"T00:00:00").getTime(), we=ws+7*864e5;
-  return Object.keys(days).filter(k=>{ const t=new Date(k+"T00:00:00").getTime(); return t>=ws&&t<we; }).length;
+  const start=weekKey(), end=todayKey();
+  return Object.keys(days).filter(k=>days[k]&&k>=start&&k<=end).length;
 }
-
-/* ============ 推荐：现在做什么 ============
-   顺序 = 已自评但尚未标为「能迁移」的知识点优先，其余按四层权重稳定排序：
-     前置依赖已满足(16) > 你指定的聚焦方向(4) > 本周已排(2) > 时长匹配(0–2)
-   权重 16 > 4+2+2，所以「依赖没满足」的项一定排在所有「依赖已满足」之后。
-   同权重时按项目地图顺序。  */
-function candidates(){
-  const all=theoryItems();
-  const budget=settings.focus;
-  const focusG=focusGroups();
-  const wk=curWeek();
-  const pathOn=(settings.pathMode!==false);
-
-  // 先复习已开始的知识点，最近更新的排在前面。
-  const doing=all.filter(x=>stOf(x.id)>0&&!isMastered(x.id))
-                 .sort((a,b)=>((progress[b.id]||{}).ts||0)-((progress[a.id]||{}).ts||0));
-
-  // 同分按地图顺序，从选场景开始。
-  const rest=all.filter(x=>stOf(x.id)===0);
-  // 时长匹配：预算小就优先推短动作；预算 ≥60 视为「时间充裕」，不再干预顺序
-  const fit=x=>{
-    if(budget>=60) return 0;
-    const m=x.item.m;
-    if(m<=budget) return 2;        // 装得下
-    if(m<=budget+15) return 1;     // 略超，开个头也行
-    return 0;
-  };
-  const ranked=rest.map((x,i)=>({x:x,i:i,key:
-      ((!pathOn||prereqMet(x))?16:0)
-    + ((focusG.indexOf(groupId(x))>=0)?4:0)
-    + (inWeek(wk,x.id)?2:0)
-    + fit(x)
-  }));
-  ranked.sort((a,b)=> (b.key-a.key) || (a.i-b.i));
-
-  const out=doing.concat(ranked.map(r=>r.x));
-
-  /* 记录排序依据，供「为什么是它」使用（避免解释和实际排序逻辑各写一份而漂移） */
-  const tieCnt={}, keyOf={}, idxOf={};
-  ranked.forEach((r,i)=>{ tieCnt[r.key]=(tieCnt[r.key]||0)+1; keyOf[r.x.id]=r.key; idxOf[r.x.id]=i; });
-  _rank={};
-  out.forEach((x,pos)=>{
-    _rank[x.id]={ pos:pos+1, of:out.length,
-      doing:stOf(x.id)>0&&!isMastered(x.id),
-      key:(keyOf[x.id]==null?0:keyOf[x.id]),
-      tie:(tieCnt[keyOf[x.id]]||1),
-      rrIndex:(idxOf[x.id]==null?-1:idxOf[x.id]) };
-  });
-  return out;
-}
-/* 排序依据的缓存：id -> {pos, of, doing, key, tie, rrIndex} */
-let _rank={};
-/* 「为什么是它」：把四层权重摊开成一句人话 */
-function whyFocus(x){
-  if(!x) return "";
-  const budget=settings.focus;
-  const rk=_rank[x.id]||{pos:1,of:1,doing:false,tie:1};
-  const r=[];
-  if(rk.doing){
-    r.push("你已做过自评，可以继续复习案例或尝试迁移");
-  }else{
-    const miss=blockedBy(x), pre=PREREQ[x.id]||[];
-    if(miss.length){
-      r.push("还有前置没开始：<b>"+esc(miss.map(p=>p.item.t).join("、"))+"</b>");
-    }else{
-      r.push(pre.length
-        ? "前置已就绪（"+esc(pre.map(id=>{const p=byId(id);return p?p.item.t:"";}).join("、"))+"）"
-        : "这项没有前置，可以直接开始");
-    }
-  }
-  if(!rk.doing && focusGroups().indexOf(groupId(x))>=0)
-    r.push("属于你的聚焦方向「<b>"+esc(groupShort(groupId(x)))+"</b>」");
-  if(!rk.doing && inWeek(curWeek(),x.id))
-    r.push("你已把它排进本周");
-  if(!rk.doing && budget<60){
-    const m=x.item.m;
-    if(m<=budget)         r.push("约 "+m+" 分钟，在你的 "+budget+" 分钟预算内");
-    else if(m<=budget+15) r.push("约 "+m+" 分钟，比 "+budget+" 分钟略长，但已是最短的一档");
-    /* 明显超预算的不在这里重复说明 —— 卡片下方已有「先做 N 分钟也算推进」的专门提示 */
-  }
-  if(!rk.doing && budget>=60) r.push("你选了「时间充裕」，所以不按时长筛");
-  if(!rk.doing && r.length<=1) r.push("按项目地图推进到「"+esc(x.pillar.name)+"」");
-  const meta = rk.doing
-    ? "你已开始学习的知识点里，这项最近有更新"
-    : "待推进的 "+rk.of+" 项里排第 "+rk.pos+(rk.tie>1? "，同时满足的有 "+rk.tie+" 项":"");
-  return r.join(" · ")+'<span class="wy-meta">（'+meta+"）</span>";
-}
-function currentFocus(){ const c=candidates(); return c.length?c[swapIdx%c.length]:null; }
-function swapFocus(){ swapIdx++; render(); }
 
 /* ============ 三态 ============ */
 function setStage(id,st){
   if(!byId(id)||!Number.isInteger(st)||st<0||st>=levelsFor(id).length) return;
+  if(st===stOf(id)) return;
   writeRec(id,{st:st});
-  if(st>=1) markedDay();
-  swapIdx=0;                 // A: 状态一变就回到队首，否则「换一个」的偏移会让焦点跳走
+  if(st>=1&&isTheory(id)) markedDay();
   saveProgress();
   render();
   if(sheetId===id && $("#sheetWrap").classList.contains("open")) openSheet(id,true);
   toast("已记为「"+levelsFor(id)[st]+"」");
 }
-function cycleStage(id){
-  const c=stOf(id);
-  if(isTheory(id)) openSheet(id);
-  else setStage(id,(c+1)%STAGE_NAME.length);
-}
-
 /* ============ 专注计时 ============ */
 let ticker=null;
+function recordFocus(id,min){
+  const ts=Date.now();
+  sessions.push({id,min,ts,uid:id+"|"+ts+"|"+Math.random().toString(36).slice(2,7)});
+  saveSessions(); markedDay();
+}
 function startTimer(id,min){
+  if(timer){ openTimerSheet(); return; }
   timer={id:id,endTs:Date.now()+min*60000,min:min};
   saveTimer(); tickTimer(); render();
   toast("专注 "+min+" 分钟，开始 🌱");
-  if("Notification" in window && Notification.permission==="default"){
-    try{ Notification.requestPermission(); }catch(e){}
-  }
+  if(sheetId===id) openSheet(id,true);
 }
 function stopTimer(silent){
   if(timer&&!silent){
-    const used=Math.round((Date.now()-(timer.endTs-timer.min*60000))/60000);
+    const used=Math.min(timer.min,Math.floor((Date.now()-(timer.endTs-timer.min*60000))/60000));
     if(used>=1){
-      sessions.push({id:timer.id,min:used,ts:Date.now()}); saveSessions(); markedDay();
-      if(!isTheory(timer.id)&&recOf(timer.id).st<1) writeRec(timer.id,{st:1});
-      sessions[sessions.length-1].uid=timer.id+"|"+Date.now()+"|"+Math.random().toString(36).slice(2,7);
-      saveSessions(); saveProgress(); toast("本次专注 "+used+" 分钟，已记录 ✓");
-    }
-    swapIdx=0;
+      recordFocus(timer.id,used);
+      toast("本次专注 "+used+" 分钟，已记录 ✓");
+    }else toast("专注不足 1 分钟");
   }
   timer=null; saveTimer(); tickTimer(); render();
   if(sheetId) openSheet(sheetId,true);
@@ -1363,31 +1061,11 @@ function finishTimer(){
   const id=timer?timer.id:null, min=timer?timer.min:0;
   timer=null; saveTimer();
   if(id){
-    sessions.push({id:id,min:min,ts:Date.now()}); saveSessions(); markedDay();
-    if(!isTheory(id)&&recOf(id).st<1) writeRec(id,{st:1});
-    sessions[sessions.length-1].uid=id+"|"+Date.now()+"|"+Math.random().toString(36).slice(2,7);
-    saveSessions(); saveProgress();
-    const it=byId(id);
-    notify("专注完成 🎉",(it?it.item.t:"")+" · 已完成 "+min+" 分钟，去写下你的收获吧");
-    toast(isTheory(id)?"阅读时间已记录，可按理解程度自评":"专注完成 🎉 已标记为学习中");
-    swapIdx=0;
-    openSheet(id);
+    recordFocus(id,min);
+    toast("专注时间已记录");
+    if(sheetId===id) openSheet(id,true);
   }
   tickTimer(); render();
-}
-function notify(title,body){
-  try{ if("Notification" in window && Notification.permission==="granted") new Notification(title,{body:body}); }catch(e){}
-  try{
-    const AC=window.AudioContext||window.webkitAudioContext;
-    if(AC){
-      const c=new AC(), o=c.createOscillator(), g=c.createGain();
-      o.connect(g); g.connect(c.destination); o.type="sine"; o.frequency.value=880;
-      g.gain.setValueAtTime(.0001,c.currentTime);
-      g.gain.exponentialRampToValueAtTime(.2,c.currentTime+.05);
-      g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.9);
-      o.start(); o.stop(c.currentTime+.95);
-    }
-  }catch(e){}
 }
 function remainingMs(){ return timer?Math.max(0,timer.endTs-Date.now()):0; }
 function fmtClock(ms){ const s=Math.ceil(ms/1000), m=Math.floor(s/60);
@@ -1405,187 +1083,50 @@ function tickTimer(){
 }
 function tickLoop(){
   clearInterval(ticker);
-  ticker=setInterval(tickTimer,1000);
+  let day=todayKey();
+  ticker=setInterval(()=>{
+    const current=todayKey();
+    if(current!==day){ day=current; render(); }
+    else tickTimer();
+  },1000);
   setInterval(paintSyncChip,60000);        // 「x 分钟前」要自己走
 }
 
 /* ============ 导航 ============ */
+
 const TABS=[
-  {id:"today", name:"今天", icon:"☀️"},
-  {id:"map",   name:"学习地图", icon:"🗺️"},
-  {id:"plan",  name:"计划", icon:"🎯"},
-  {id:"me",    name:"我的", icon:"📊"}
+  {id:"map", name:"学习地图", icon:"🗺️"},
+  {id:"me", name:"设置", icon:"⚙️"}
 ];
 function renderNav(){
-  const c=countByStage();
-  const doneToday=progressedToday();
-  const badge={
-    today: doneToday>=settings.daily ? "✓" : (doneToday||""),
-    map:   c[1]+c[2]||"",
-    plan:  weekItems(curWeek()).filter(id=>!isMastered(id)).length||"",
-    me:    ""
-  };
-  const has=v=>v!==""&&v!=null;
-  $("#railNav").innerHTML=TABS.map(t=>`
-    <button class="${activeTab===t.id?'on':''}" onclick="goTab('${t.id}')">
-      <span class="rn-ic">${t.icon}</span><span>${t.name}</span>
-      ${has(badge[t.id])?`<span class="rn-badge">${badge[t.id]}</span>`:""}
+  const buttons=TABS.map(t=>`
+    <button class="${activeTab===t.id?"on":""}" aria-current="${activeTab===t.id?"page":"false"}" onclick="goTab('${t.id}')">
+      <span class="rn-ic bn-ic">${t.icon}</span><span>${t.name}</span>
     </button>`).join("");
-  $("#bottomNav").innerHTML=TABS.map(t=>`
-    <button class="${activeTab===t.id?'on':''}" onclick="goTab('${t.id}')">
-      <span class="bn-ic">${t.icon}</span><span>${t.name}</span>
-      ${has(badge[t.id])?`<span class="bn-dot">${badge[t.id]}</span>`:""}
-    </button>`).join("");
-  const cur=TABS.filter(t=>t.id===activeTab)[0];
-  $("#abTitle").innerHTML="<span>"+cur.icon+"</span>"+cur.name;
-  if($("#ringFill")){
-    const pct=weightedPct(), C=169.6;
-    $("#ringFill").style.strokeDashoffset=String(C-C*pct/100);
-    $("#ringPct").textContent=pct+"%";
-    $("#ringBar").style.width=pct+"%";
-    $("#ringSub").textContent=c[3]+" / "+theoryItems().length+" 项能迁移";
-  }
+  $("#railNav").innerHTML=buttons;
+  $("#bottomNav").innerHTML=buttons;
+  $("#abTitle").textContent=TABS.find(t=>t.id===activeTab).name;
 }
-
-/* ============ 今天 ============ */
-function renderToday(){
-  const doneToday=progressedToday();
-  const goalMet=doneToday>=settings.daily;
-  const c=countByStage();
-  const focus=currentFocus();
-  const w=curWeek();
-  const wList=weekItems(w).map(byId).filter(Boolean);
-  const wDone=wList.filter(x=>isMastered(x.id)).length;
-  const wDoing=wList.filter(x=>stOf(x.id)>0&&!isMastered(x.id)).length;
-  const sk=streak();
-  const firstRun=Object.keys(days).length===0 && sessions.length===0 && c[0]===theoryItems().length;
-
-  const prevK=weekKeyOf(-1), prevW=plan.weeks[prevK];
-  const prevLeft=prevW?(weekItems(prevW).filter(id=>!isMastered(id)).length+weekGoals(prevW).filter(g=>!g.done).length):0;
-  const rollBanner=(prevLeft>0&&!(prevW&&prevW.rolledAt))
-    ? `<div class="banner">📦 上周还有 <b>${prevLeft}</b> 件事没做完
-        <button class="btn btn-sm" onclick="rollover()">滚入本周</button>
-        <button class="btn btn-sm" onclick="dismissRollover()">不滚了</button></div>` : "";
-
-  const focusHtml=focus?`
-    <div class="focus">
-      <div class="focus-accent" style="background:${focus.pillar.color}"></div>
-      <div class="focus-in">
-        <div class="f-crumb">
-          <span class="tag" style="background:${focus.pillar.color}22;color:${focus.pillar.color}">${focus.pillar.icon} ${esc(focus.pillar.name)}</span>
-          <span>${esc(focus.group.name)}</span>
-          ${focusGroups().indexOf(groupId(focus))>=0?'<span class="pill">🎯 聚焦中</span>':''}
-          ${stOf(focus.id)>0?`<span class="pill st1">${levelsFor(focus.id)[stOf(focus.id)]}</span>`:""}
-        </div>
-        <div class="f-title">${esc(focus.item.t)}</div>
-        <div class="f-desc">${esc(focus.item.d)}</div>
-        <div class="why"><span class="wy-ic">💡</span><span><b>为什么是它</b>：${whyFocus(focus)}</span></div>
-
-        <div class="budget">
-          <span class="bg-lb">现在有</span>
-          ${[15,25,45,60].map(n=>`<button class="${settings.focus===n?'on':''}" onclick="setBudget(${n})">${n}${n===60?'+':''}</button>`).join("")}
-          <span class="bg-lb">分钟</span>
-        </div>
-
-        ${blockedBy(focus).length
-          ? `<div class="hint-line warn"><span>🔒</span><span>建议先学：<b>${esc(prereqNames(focus))}</b>。
-              按学习路径，这项排在它们后面 —— 但你想现在做也完全可以，随你。</span></div>`
-          : (focus.item.m>settings.focus
-              ? `<div class="hint-line"><span>⏱</span><span>这项阅读约需 <b>${focus.item.m} 分钟</b>。
-                  可以先读概念，之后再回来看案例。</span></div>`
-              : "")}
-
-        <div class="action-box" style="margin-bottom:13px">
-          <div class="ab-label">这一项具体学什么</div>
-          <div class="ab-text">${esc(focus.item.topics.map(([name])=>name).join(" · "))}</div>
-        </div>
-        <div class="f-meta">
-          <span class="meta-pill">⏱ 约 ${focus.item.m} 分钟</span>
-          <span class="meta-pill">📚 ${esc(focus.item.s)}</span>
-        </div>
-        <div class="f-actions">
-          ${timer
-            ? `<button class="btn btn-primary btn-wide" onclick="openTimerSheet()">⏱ 专注中 ${fmtClock(remainingMs())}</button>`
-            : `<button class="btn btn-primary btn-wide" onclick="openSheet('${focus.id}')">阅读与辨析</button>`}
-          <button class="btn btn-soft" onclick="swapFocus()">换一个</button>
-        </div>
-      </div>
-    </div>`
-    :`<div class="panel"><div class="empty"><span class="e-ic">🎉</span>
-        所有必修知识点已标记为「能迁移」。<br/>可以回地图复习案例。</div></div>`;
-
-  const doneList=ITEMS().filter(x=>{ const p=progress[x.id];
-    return p&&p.sts&&p.st>=1&&dstr(new Date(p.sts))===todayKey(); });
-  const doneHtml=doneList.map(x=>`
-    <div class="row">
-      <span class="checkbox on" style="--pc:${x.pillar.color}">✓</span>
-      <div class="r-tx" style="cursor:default"><span class="r-t">${esc(x.item.t)}</span>
-        <div class="r-sub">${levelsFor(x.id)[stOf(x.id)]} · ${esc(x.pillar.name)}</div></div>
-    </div>`).join("");
-
-  const wHtml=wList.length?wList.map(x=>{
-    const s=stOf(x.id), done=isMastered(x.id);
-    return `<div class="row ${done?'done':''}">
-      <span class="checkbox ${done?'on':(s>0?'st1':'')}" style="--pc:${x.pillar.color}"
-        onclick="cycleStage('${x.id}')">${done?'✓':(s>0?'·':'')}</span>
-      <div class="r-tx" onclick="openSheet('${x.id}')"><span class="r-t">${esc(x.item.t)}</span>
-        <div class="r-sub">${esc(x.item.a||x.item.d)}</div></div>
-    </div>`;
-  }).join("") : `<div class="empty" style="padding:16px"><span class="e-ic">🎯</span>
-      本周还没选学习内容。<br/>点下面按钮，从必修地图挑 ${settings.weekly} 个。</div>`;
-
-  $("#view").innerHTML=`
-    ${rollBanner}
-    <div class="promise ${goalMet?'done':''}" style="margin-top:12px">
-      <div class="p-top">${goalMet?'✅ 今日已完成':'☀️ 今日承诺'}</div>
-      <div class="p-big">${goalMet?'可以收工了':'学习 '+settings.daily+' 个知识点'}</div>
-      <div class="p-sub">${goalMet
-        ? "今天推进了 "+doneToday+" 项 · 连续 "+sk+" 天"
-        : "今天推进了 "+doneToday+" / "+settings.daily+" 项 · 读概念、辨案例、做自评"}</div>
-      <div class="p-bar"><i style="width:${Math.min(100,doneToday/settings.daily*100)}%"></i></div>
-      <div class="p-actions">
-        ${goalMet
-          ? `<button class="btn btn-ghost-w" onclick="goTab('plan')">写本周复盘</button>
-             <button class="btn btn-white" onclick="swapFocus()">再学一个</button>`
-          : (timer
-              ? `<button class="btn btn-white" onclick="openTimerSheet()">⏱ 专注中 ${fmtClock(remainingMs())}</button>`
-              : (focus
-                  ? `<button class="btn btn-white" onclick="openSheet('${focus.id}')">打开今日知识点</button>`
-                  : `<button class="btn btn-white" onclick="goTab('map')">去地图挑一个</button>`))}
-      </div>
+function resumeItem(){
+  const items=theoryItems();
+  const bookmarked=items.find(x=>x.id===lastReadId);
+  if(bookmarked) return bookmarked;
+  return items.reduce((latest,x)=>(progress[x.id]?.ts||0)>(progress[latest.id]?.ts||0)?x:latest,items[0]);
+}
+function continueReading(){ openSheet(resumeItem().id); }
+function mapOverview(){
+  const count=weekActiveDays(), next=resumeItem();
+  return `<div class="panel map-overview">
+    <div>
+      <div class="ab-label">继续阅读</div>
+      <button class="btn btn-soft btn-sm" id="continueReading" onclick="continueReading()">${esc(next.item.t)}</button>
     </div>
-
-    <div class="panel note" style="margin-top:12px">选场景 → 设计任务 → 接入与执行 → 评测上线<br/><button class="btn btn-line btn-sm" style="margin-top:8px" onclick="goTab('map')">打开学习地图</button></div>
-    <div id="focusAnchor"></div>
-    <div class="sect-h">🎯 今日知识点<span class="sh-sub">${
-      focusGroups().length
-        ? "聚焦："+esc(focusGroups().map(groupShort).join("、"))
-        : "概念与判断框架"}</span></div>
-    ${focusUnlock()}
-    ${focusHtml}
-
-    ${firstRun
-      ? `<div class="panel note" style="margin-top:16px">打开一张知识卡，先读概念和判断框架，再试着回答案例。看完参考判断后，按自己的理解程度自评。</div>`
-      : `<div class="stats" style="margin-top:16px">
-          <div class="stat"><span class="s-ic">🔥</span><b>${sk}</b><span>连续天数</span></div>
-          <div class="stat"><span class="s-ic">⏱</span><b>${minutesThisWeek()}</b><span>本周专注(分)</span></div>
-          <div class="stat"><span class="s-ic">🌱</span><b>${c[1]+c[2]}</b><span>已理解或能辨析</span></div>
-          <div class="stat"><span class="s-ic">✅</span><b>${c[3]}</b><span>能迁移</span></div>
-        </div>`}
-
-    <div class="sect-h">📌 本周学习<span class="sh-sub">${wDone}/${wList.length} 已掌握或能迁移${wDoing?" · "+wDoing+" 进行中":""}</span></div>
-    <div class="panel">
-      ${wHtml}
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button class="btn btn-soft btn-sm" onclick="autoPlanWeek()">✨ 从必修地图挑 ${settings.weekly} 个</button>
-        <button class="btn btn-line btn-sm" onclick="goTab('plan')">管理本周</button>
-      </div>
+    <div class="week-kpi" id="weekKpi">
+      <div class="week-kpi-head"><b>每周打卡</b><strong>${count} / 5 天</strong></div>
+      <div class="bar sm" role="progressbar" aria-label="每周打卡" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${Math.min(count,5)}"><i style="width:${Math.min(count/5,1)*100}%"></i></div>
+      <div class="note">周一重新计数。完成至少 1 分钟专注，或更新学习自评，计为一天。</div>
     </div>
-
-    ${doneHtml?`<div class="sect-h">✅ 今天推进的</div><div class="panel">${doneHtml}</div>`:""}
-
-    <div class="sect-h">💡 怎么学</div>
-    <div class="panel note">能复述概念，再试着说明案例里的区别。能把判断框架用到另一类场景时，标记为「能迁移」。</div>`;
+  </div>`;
 }
 /* ============ 地图 ============ */
 function renderMap(){
@@ -1629,15 +1170,14 @@ function renderMap(){
         const pill=`<span class="pill ${done?'st2':s>0?'st1':''}">${levelsFor(id)[s]}</span>`;
         return `<div class="card ${done?'st2':s>0?'st1':''}" style="--pc:${p.color}" onclick="openSheet('${id}')">
           <span class="checkbox ${done?'on':(s>0?'st1':'')}" style="--pc:${p.color};margin-top:2px"
-            onclick="event.stopPropagation();cycleStage('${id}')">${done?'✓':(s>0?'·':'')}</span>
+            aria-hidden="true">${done?'✓':(s>0?'·':'')}</span>
           <div class="c-body">
             <div class="c-title">${esc(it.t)}</div>
             <div class="c-act">${it.topics?"":"▶ "}${esc(it.a||it.d)}</div>
             ${it.topics?`<div class="study-preview">具体学 ${esc(it.topics.map(([name])=>name).join(" · "))}</div>`:""}
             <div class="c-foot">${pill}<span class="pill">⏱ ${it.m}分</span>
               ${it.change?`<span class="pill ${it.change==="新增"?"st1":""}">${it.change}</span>`:""}
-              ${noteOf(id)?'<span class="pill">📝 笔记</span>':''}
-              ${(s===0&&blockedBy({id:id}).length)?`<span class="pill warn">🔒 先学 ${esc(prereqNames({id:id}))}</span>`:''}</div>
+              ${noteOf(id)?'<span class="pill">📝 笔记</span>':''}</div>
           </div>
         </div>`;
       }).join("");
@@ -1659,21 +1199,18 @@ function renderMap(){
     ${mapPillar==="all"
       ? `<div class="sect-h" style="margin-top:10px">🗺️ AI 产品学习地图<span class="sh-sub">理论知识 · 思维模式</span></div>
          <div class="panel note" style="margin-bottom:12px">四个阶段对应四类产品判断。每张必修卡回答三个问题。具体学什么、学到多深、怎样算学成。</div>
+         ${mapOverview()}
          <div class="pillars">${stageCards}</div>
-         <div class="sect-h">必修知识<span class="sh-sub">卡片标注新增或调整</span></div>
-         <div class="link-row">
-           <button class="btn btn-line btn-sm" onclick="pickPillar('practice')">选修实操 · 原项目练习</button>
-           <button class="btn btn-line btn-sm" onclick="pickPillar('library')">旧版资料库 · 原有知识与笔记</button>
-         </div>`
-      : `<button class="btn btn-line btn-sm" style="margin-top:12px" onclick="pickPillar('all')">← 返回学习地图</button>
+         <div class="sect-h">必修知识</div>`
+      : `<button class="btn btn-line btn-sm" style="margin-top:12px" onclick="goTab('${optional?"me":"map"}')">← ${optional?"返回设置":"返回学习地图"}</button>
          ${stage? `<div class="sect-h">${stage.icon} ${stage.name}</div>
                    <div class="panel"><div class="note">${stage.question}</div>
                      ${next?`<button class="btn btn-line btn-sm" style="margin-top:10px" onclick="pickPillar('${next.id}')">下一阶段 · ${next.name}</button>`:""}
                    </div>`
                  : (practice? `<div class="sect-h">选修实操<span class="sh-sub">原项目练习</span></div>
-                    <div class="panel note">原练习、交付物、笔记与进度可在这里查看。选修实操可以手动加入周计划。</div>`
+                    <div class="panel note">原练习、交付物、笔记与进度可在这里查看。</div>`
                  : `<div class="sect-h">📚 旧版资料库<span class="sh-sub">按需查阅</span></div>
-                    <div class="panel note">旧版 63 项及其打卡和笔记保留在这里。经典算法、训练细节、认证、峰会和投放等按需查阅。</div>`)}`}
+                    <div class="panel note">这里保留了旧版 63 项资料及其打卡和笔记。</div>`)}`}
 
     <div class="filterbar">
       <div class="search"><span class="ic">🔍</span>
@@ -1689,7 +1226,9 @@ function renderMap(){
     </div>
     ${groupsHtml||`<div class="empty"><span class="e-ic">🔍</span>没有匹配的知识点，换个词试试</div>`}`;
 }
-function pickPillar(p){ mapPillar=p; mapFilter="all"; mapQuery=""; render(); window.scrollTo({top:0,behavior:"smooth"}); }
+function pickPillar(p){
+  activeTab=p==="practice"||p==="library"?"me":"map";
+  mapPillar=p; mapFilter="all"; mapQuery=""; render(); window.scrollTo({top:0,behavior:"smooth"}); }
 function setMapFilter(f){ mapFilter=f; render(); }
 function onMapSearch(v){
   mapQuery=v; const pos=v.length;
@@ -1698,222 +1237,80 @@ function onMapSearch(v){
   if(i){ i.focus(); try{ i.setSelectionRange(pos,pos); }catch(e){} }
 }
 
-/* ============ 计划 ============ */
-function renderPlan(){
-  const k=weekKey(), w=ensureWeek(k);
-  const prevK=weekKeyOf(-1), prevW=plan.weeks[prevK];
-  const wList=weekItems(w).map(byId).filter(Boolean);
-  const wDone=wList.filter(x=>isMastered(x.id)).length;
-  const pc=wList.length?Math.round(wDone/wList.length*100):0;
-  const goals=weekGoals(w);
-  const prevLeftItems=prevW?weekItems(prevW).filter(id=>!isMastered(id)).length:0;
-  const prevLeftGoals=prevW?weekGoals(prevW).filter(g=>!g.done).length:0;
 
-  const itemsHtml=wList.length?wList.map(x=>{
-    const s=stOf(x.id), done=isMastered(x.id);
-    return `<div class="row ${done?'done':''}">
-      <span class="checkbox ${done?'on':(s>0?'st1':'')}" style="--pc:${x.pillar.color}"
-        onclick="cycleStage('${x.id}')">${done?'✓':(s>0?'·':'')}</span>
-      <div class="r-tx" onclick="openSheet('${x.id}')"><span class="r-t">${esc(x.item.t)}</span>
-        <div class="r-sub">${x.pillar.icon} ${esc(x.pillar.name)} · ${levelsFor(x.id)[s]}</div></div>
-      <button class="row-x" onclick="unplanItem('${x.id}')">✕</button>
-    </div>`;
-  }).join("") : `<div class="empty" style="padding:18px"><span class="e-ic">🎯</span>
-      本周还没选学习内容。<br/>先排 3 个，比排 30 个有用。</div>`;
-
-  const goalsHtml=goals.length?goals.map(g=>`
-    <div class="row ${g.done?'done':''}">
-      <span class="checkbox ${g.done?'on':''}" onclick="toggleGoal('${esc(g.id)}')">${g.done?'✓':''}</span>
-      <div class="r-tx" style="cursor:default"><span class="r-t">${esc(g.text)}</span></div>
-      <button class="row-x" onclick="delGoal('${esc(g.id)}')">✕</button>
-    </div>`).join("") : `<div class="empty" style="padding:14px">还没有自定义目标</div>`;
-
-  const lastWeeks=Object.keys(plan.weeks)
-    .filter(x=>x.indexOf("old-")<0&&x.indexOf("migrated-")<0&&x!==k)
-    .sort().reverse().slice(0,4);
-
-  $("#view").innerHTML=`
-    <div class="sect-h" style="margin-top:10px">🎯 本周 · ${weekLabel(k)}<span class="sh-sub">周一为一周之始</span></div>
-
-    <div class="panel">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="font-size:14px;font-weight:700">本周进度</div>
-        <div style="font-size:13px;color:var(--muted)"><b style="color:var(--text)">${wDone}</b>/${wList.length} · ${pc}%</div>
-      </div>
-      <div class="bar" style="margin-bottom:14px"><i style="width:${pc}%;background:linear-gradient(90deg,#6366f1,#ec4899)"></i></div>
-      ${itemsHtml}
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button class="btn btn-soft btn-sm" onclick="autoPlanWeek()">✨ 自动排 ${settings.weekly} 个</button>
-        <button class="btn btn-line btn-sm" onclick="goTab('map')">去地图手动挑</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div style="font-size:14px;font-weight:750;margin-bottom:11px">📝 自定义目标（可选）</div>
-      ${goalsHtml}
-      <div style="display:flex;gap:8px;margin-top:11px">
-        <input class="field" id="goalInput" placeholder="例如：周五前把 RAG demo 发给同事看"
-          onkeydown="if(event.key==='Enter')addGoal()"/>
-        <button class="btn btn-primary btn-sm" onclick="addGoal()">加</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div style="font-size:14px;font-weight:750;margin-bottom:6px">🔥 本周节奏</div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:7px">
-        <span>有推进的天数 <b style="color:var(--text)">${weekActiveDays()}</b> / 7</span>
-        <span>专注 <b style="color:var(--text)">${minutesThisWeek()}</b> 分钟</span>
-      </div>
-      <div class="bar"><i style="width:${weekActiveDays()/7*100}%;background:${weekActiveDays()>=5?'#10b981':'#f59e0b'}"></i></div>
-      <div class="note" style="margin-top:9px">一周有 5 天动过手，就算合格的一周。</div>
-    </div>
-
-    <div class="sect-h">📖 周复盘</div>
-    <div class="panel">
-      <textarea class="field" id="reflectInput" placeholder="这周实际做了什么？卡在哪？下周要砍掉什么？">${esc(w.reflection||"")}</textarea>
-      <div style="display:flex;gap:9px;align-items:center;margin-top:11px;flex-wrap:wrap">
-        <button class="btn btn-primary btn-sm" onclick="doReview()">保存复盘</button>
-        <span style="font-size:12px;color:var(--muted)">${w.reviewedAt?"上次复盘 "+dstr(new Date(w.reviewedAt)):"本周还没复盘"}</span>
-      </div>
-    </div>
-
-    ${(prevLeftItems||prevLeftGoals)?`<div class="panel">
-      <div style="font-size:14px;font-weight:750;margin-bottom:9px">📦 上周遗留</div>
-      <div class="note" style="margin-bottom:11px">上周有 ${prevLeftItems} 个动作、${prevLeftGoals} 个目标没完成。</div>
-      <button class="btn btn-soft btn-sm" onclick="rollover()">滚入本周</button></div>`:""}
-
-    ${lastWeeks.length?`<div class="sect-h">🕘 历史周</div><div class="panel">
-      ${lastWeeks.map(kk=>{
-        const ww=plan.weeks[kk], wi=weekItems(ww), n=wi.length;
-        const d=wi.filter(id=>isMastered(id)).length;
-        return `<div class="row"><div class="r-tx" style="cursor:default"><span class="r-t">${weekLabel(kk)}</span>
-          <div class="r-sub">${d}/${n} 完成${ww.reflection?" · 已复盘":""}</div></div></div>`;
-      }).join("")}</div>`:""}`;
+function archivedPlans(){
+  return Object.entries(plan.weeks||{}).sort(([a],[b])=>b.localeCompare(a)).map(([key,w])=>{
+    const items=weekItems(w).map(byId).filter(Boolean);
+    const goals=weekGoals(w);
+    const reflection=w?.reflection||"";
+    if(!items.length&&!goals.length&&!reflection) return "";
+    const label=/^\d{4}-\d{2}-\d{2}$/.test(key)?key.slice(0,4)+" · "+weekLabel(key):key.replace(/^old-/,"旧冲刺第 ").replace(/^migrated-/,"迁移记录 ");
+    return `<details class="sheet-extra">
+      <summary>${esc(label)}</summary>
+      ${items.length?`<div class="ab-label">已排入的知识点</div><ul class="study-topics">${items.map(x=>`<li><button class="btn btn-line btn-sm" onclick="openSheet('${x.id}',false,true)">${esc(x.item.t)}</button></li>`).join("")}</ul>`:""}
+      ${goals.length?`<div class="ab-label">周目标</div><ul class="study-topics">${goals.map(g=>`<li>${g.done?"✓ ":""}${esc(g.text)}</li>`).join("")}</ul>`:""}
+      ${reflection?`<div class="ab-label">周复盘</div><div class="archive-reflection">${esc(reflection)}</div>`:""}
+    </details>`;
+  }).join("");
 }
-
-/* ============ 我的 ============ */
 function renderMe(){
-  const c=countByStage();
-  const totalMin=sessions.reduce((a,b)=>a+(b.min||0),0);
-  const pct=weightedPct();
   $("#view").innerHTML=`
-    <div class="sect-h" style="margin-top:10px">📊 累计数据</div>
-    <div class="stats">
-      <div class="stat"><span class="s-ic">✅</span><b>${c[3]}</b><span>能迁移</span></div>
-      <div class="stat"><span class="s-ic">🌱</span><b>${c[1]+c[2]}</b><span>已理解或能辨析</span></div>
-      <div class="stat"><span class="s-ic">⏱</span><b>${totalMin}</b><span>累计专注(分)</span></div>
-      <div class="stat"><span class="s-ic">🔥</span><b>${streak()}</b><span>连续天数</span></div>
-    </div>
-    <div class="panel" style="margin-top:12px">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
-        <span style="color:var(--muted)">理论学习进度（长期刻度，慢慢来）</span><b>${pct}%</b></div>
-      <div class="bar"><i style="width:${pct}%;background:linear-gradient(90deg,#6366f1,#ec4899)"></i></div>
-      <div class="note" style="margin-top:10px">
-        最长连续 <b>${longestStreak()}</b> 天 · 累计有推进 <b>${Object.keys(days).length}</b> 天 ·
-        专注记录 <b>${sessions.length}</b> 次 · 今日专注 <b>${minutesOn(todayKey())}</b> 分钟
-      </div>
-    </div>
-
-    <div class="sect-h">⚙️ 设置</div>
+    <div class="sect-h" style="margin-top:10px">⚙️ 设置</div>
     <div class="panel">
-      <div style="font-size:13.5px;font-weight:700;margin-bottom:8px">每日目标知识点数</div>
-      <div class="radios">${[1,2,3].map(n=>`<button class="${settings.daily===n?'on':''}" onclick="setSetting('daily',${n})">${n} 个</button>`).join("")}</div>
-      <div style="font-size:13.5px;font-weight:700;margin:15px 0 8px">每周计划知识点数</div>
-      <div class="radios">${[2,3,5,8].map(n=>`<button class="${settings.weekly===n?'on':''}" onclick="setSetting('weekly',${n})">${n} 个</button>`).join("")}</div>
-      <div style="font-size:13.5px;font-weight:700;margin:15px 0 8px">单次专注时长</div>
-      <div class="radios">${[15,25,45,60].map(n=>`<button class="${settings.focus===n?'on':''}" onclick="setSetting('focus',${n})">${n} 分钟</button>`).join("")}</div>
-      <div class="note" style="margin-top:8px">可以一次只学一个知识点。阅读计时由你决定。</div>
-    </div>
-
-    <div class="sect-h">🎯 聚焦方向<span class="sh-sub">推荐会优先推这些方向</span></div>
-    <div class="panel">
-      <div class="note" style="margin-bottom:12px">
-        选 1–2 个想优先学习的产品阶段。<br/>
-        不选时按学习地图顺序和阅读时长推荐。
-      </div>
-      ${THEORY.map(p=>`
-        <div style="margin-bottom:13px">
-          <div style="font-size:12.5px;font-weight:700;color:${p.color};margin-bottom:7px">${p.icon} ${p.name}</div>
-          <div class="radios">
-            ${p.groups.map((g,gi)=>{
-              const gid=p.id+"-"+gi;
-              const on=focusGroups().indexOf(gid)>=0;
-              const its=theoryItems().filter(x=>groupId(x)===gid);
-              const m=its.filter(x=>isMastered(x.id)).length;
-              return `<button class="fg-chip ${on?'on':''}" onclick="toggleFocusGroup('${gid}')">
-                优先推进 <span style="opacity:.65;font-weight:600">${m}/${its.length}</span></button>`;
-            }).join("")}
-          </div>
-        </div>`).join("")}
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <button class="btn btn-line btn-sm" onclick="clearFocusGroups()">清除聚焦方向</button>
-        <span class="note" style="margin:0">已选 ${focusGroups().length} / 2</span>
-      </div>
-    </div>
-
-    <div class="sect-h">🧭 推荐顺序</div>
-    <div class="panel">
-      <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap">
-        <div class="r-tx" style="cursor:default">
-          <span class="r-t">按前置依赖排序</span>
-          <div class="r-sub">例如「RAG」要等「Prompt Engineering」开始过才会被优先推荐</div>
-        </div>
-        <button class="btn ${settings.pathMode!==false?'btn-primary':'btn-line'} btn-sm" onclick="togglePathMode()">
-          ${settings.pathMode!==false?'已开启':'已关闭'}</button>
-      </div>
-      <div class="note" style="margin-top:10px">
-        关闭后，推荐不再检查动作的前置依赖。<br/>
-        无论开关如何，<b>地图里始终可以直接开始任何一个知识点</b>——这只是推荐顺序，不是门禁。
-      </div>
-    </div>
-
-    <div class="panel">
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="link-row">
         <button class="btn btn-line btn-sm" onclick="toggleTheme()">🌗 深浅色</button>
         <button class="btn btn-line btn-sm" onclick="exportData()">⬇️ 导出备份</button>
         <button class="btn btn-line btn-sm" onclick="document.getElementById('fileInput').click()">⬆️ 导入</button>
-        <button class="btn btn-line btn-sm" onclick="enableNotify()">🔔 完成提醒</button>
       </div>
     </div>
-
     ${syncPanelHtml()}
-
+    <details class="acc" style="margin-top:14px">
+      <summary>历史资料</summary>
+      <div class="panel">
+        <div class="link-row">
+          <button class="btn btn-line btn-sm" onclick="pickPillar('practice')">原实操练习</button>
+          <button class="btn btn-line btn-sm" onclick="pickPillar('library')">旧版知识资料</button>
+        </div>
+        <div class="sect-h">旧周计划</div>
+        ${archivedPlans()||'<div class="note">暂无旧周计划。</div>'}
+      </div>
+    </details>
     <div class="panel" style="margin-top:12px">
-      <button class="btn btn-line btn-sm btn-block" style="color:#dc2626" onclick="resetAll()">🗑️ 清空全部数据</button>
-    </div>
-
-    <div class="note" style="text-align:center;margin-top:20px">
-      AI 产品经理知识体系 · 理论与思维<br/>选场景 → 设计任务 → 接入与执行 → 评测上线
+      <button class="btn btn-line btn-sm" style="color:#dc2626" onclick="resetAll()">清空全部数据</button>
     </div>`;
 }
-
 /* ============ 路由 ============ */
 function render(){
   renderNav();
   paintSyncChip();
   renderSyncBanner();
-  if(activeTab==="today") renderToday();
-  else if(activeTab==="map") renderMap();
-  else if(activeTab==="plan") renderPlan();
+  if(activeTab==="map"||mapPillar==="library"||mapPillar==="practice") renderMap();
   else renderMe();
   tickTimer();
 }
 function goTab(t){
-  activeTab=t; swapIdx=0;
-  if(t!=="map") mapQuery="";
+  activeTab=t==="me"?"me":"map";
+  mapPillar="all"; mapFilter="all"; mapQuery="";
   render(); window.scrollTo({top:0,behavior:"smooth"});
 }
 
 /* ============ 抽屉 ============ */
 let sheetId=null;
-function openSheet(id,keep){
+function openSheet(id,keep,archive=false){
   const x=byId(id); if(!x) return;
   const openSections=keep&&sheetId===id?$$('#sheet details[open]').map(el=>el.id):[];
   const openAttr=name=>openSections.includes(name)?"open":"";
+  if(!keep&&isTheory(id)&&!archive){
+    lastReadId=id;
+    localStorage.setItem(READ_KEY,id);
+    const button=$("#continueReading");
+    if(button) button.textContent=x.item.t;
+  }
   sheetId=id;
   const s=stOf(id), it=x.item;
   const q=encodeURIComponent(it.q), sq=encodeURIComponent(it.s);
   const isTimer=timer&&timer.id===id;
+  const readOnly=archive||(!it.topics&&!isTimer);
   $("#sheet").innerHTML=`
     <div class="grabber"></div>
     <div class="sheet-h">
@@ -1947,10 +1344,10 @@ function openSheet(id,keep){
       <details class="sheet-extra" id="sheetTools" ${isTimer?"open":openAttr("sheetTools")}>
         <summary>自评、笔记与学习工具</summary>`:""}
 
-    <div class="stage-grid ${it.topics?'theory-levels':''}">
+    ${readOnly?`<div class="note" style="margin-bottom:12px">历史进度 · ${levelsFor(id)[s]}</div>`:`<div class="stage-grid ${it.topics?'theory-levels':''}">
       ${levelsFor(id).map((label,k)=>`<button class="stage-btn ${s===k?'on':''}" data-st="${k}" aria-pressed="${s===k}" onclick="setStage('${id}',${k})">
         <span class="sb-ic">${!it.topics&&k===2?"✓":["○","◐","◇","✓"][k]}</span>${label}</button>`).join("")}
-    </div>
+    </div>`}
 
     ${it.topics?"":`<div class="action-box" style="margin-bottom:14px">
       <div class="ab-label">▶ 第一步就做这个</div>
@@ -1964,19 +1361,13 @@ function openSheet(id,keep){
       <span class="meta-pill">📚 ${esc(it.s)}</span>
     </div>
 
-    ${(s===0&&blockedBy({id:id}).length)
-      ? `<div class="hint-line warn" style="margin-bottom:14px"><span>🔒</span>
-          <span>按学习路径，建议先学：<b>${esc(prereqNames({id:id}))}</b>。<br/>
-          这只是推荐顺序，你想直接开始这项也完全可以。</span></div>` : ""}
-
     <div class="link-row">
       <button class="btn btn-soft btn-sm" onclick="window.open('https://www.bing.com/search?q=${q}','_blank')">🔍 搜索关键词</button>
       ${!it.topics&&it.url?`<a class="btn btn-line btn-sm" href="${esc(it.url)}" target="_blank" rel="noopener noreferrer">📚 阅读一手资料</a>`:
         (!it.change?`<button class="btn btn-line btn-sm" onclick="window.open('https://www.bing.com/search?q=${sq}','_blank')">📚 打开入口</button>`:"")}
-      <button class="btn btn-line btn-sm" onclick="addToWeek('${id}')">📌 加入本周</button>
     </div>
 
-    <div class="timer-card">
+    ${readOnly?"":`<div class="timer-card">
       ${isTimer?`
         <div class="timer-disp" id="sheetTimerDisp">${fmtClock(remainingMs())}</div>
         <div class="timer-hint">专注中 · 本次设定 ${timer.min} 分钟</div>
@@ -1989,14 +1380,14 @@ function openSheet(id,keep){
         <div class="timer-disp">${settings.focus}:00</div>
         <div class="timer-hint">专注计时（可选）</div>
         <div class="timer-opts">
-          ${[15,25,45].map(n=>`<button class="${n===settings.focus?'on':''}" onclick="startTimer('${id}',${n})">${n} 分钟</button>`).join("")}
+          ${[15,25,45,60].map(n=>`<button class="${n===settings.focus?'on':''}" onclick="startTimer('${id}',${n})">${n} 分钟</button>`).join("")}
         </div>`}
-    </div>
+    </div>`}
 
     <div style="margin-top:15px">
       <div class="ab-label" style="color:var(--muted)">📝 ${it.change==="交付物"?"交付物记录":"学习笔记"}</div>
       <textarea class="field" id="noteField" placeholder="${it.change==="交付物"?"写下成果摘要或粘贴交付物链接…":"记下你查到的链接、踩的坑、还没想通的点…"}"
-        oninput="onNote('${id}',this.value)">${esc(noteOf(id))}</textarea>
+        ${readOnly?"readonly":`oninput="onNote('${id}',this.value)"`}>${esc(noteOf(id))}</textarea>
     </div>
     ${it.topics?"</details>":""}`;
   const w=$("#sheetWrap");
@@ -2013,85 +1404,9 @@ function closeSheet(){
 }
 function openTimerSheet(){
   if(timer) openSheet(timer.id);
-  else toast("先从焦点卡片开始一个专注吧");
+  else toast("从知识卡片开始专注计时");
 }
 function onNote(id,v){ writeRec(id,{note:v}); saveProgress(); }
-function setSetting(k,v){ settings[k]=v; saveSettings(); render(); toast("已保存设置"); }
-/* E: 「现在有几分钟」——同时决定计时长度，并让推荐优先推装得下的项 */
-function setBudget(n){ settings.focus=n; saveSettings(); swapIdx=0; render(); }
-/* B: 聚焦方向开关 */
-function toggleFocusGroup(gid){
-  settings.focusGroups=focusGroups();
-  const i=settings.focusGroups.indexOf(gid);
-  if(i>=0) settings.focusGroups.splice(i,1);
-  else{
-    if(settings.focusGroups.length>=2){ toast("最多选 2 个方向，聚焦才有意义"); return; }
-    settings.focusGroups.push(gid);
-  }
-  saveSettings(); swapIdx=0; render();
-}
-function clearFocusGroups(){ settings.focusGroups=[]; saveSettings(); swapIdx=0; render(); toast("已清除聚焦方向"); }
-function togglePathMode(){ settings.pathMode=(settings.pathMode===false); saveSettings(); swapIdx=0; render();
-  toast(settings.pathMode?"已开启：按前置依赖排序推荐":"已关闭：不再按依赖排序"); }
-function enableNotify(){
-  if(!("Notification" in window)){ toast("这个浏览器不支持系统通知"); return; }
-  Notification.requestPermission().then(p=>{
-    toast(p==="granted"?"已开启：计时结束会提醒你 🔔":"已拒绝，可在浏览器设置里改");
-  });
-}
-
-/* ============ 本周操作 ============ */
-function addToWeek(id){
-  const w=curWeek();
-  if(inWeek(w,id)){ toast("已经在本周计划里了"); return; }
-  planAdd(id); render(); toast("已加入本周 📌");
-}
-function unplanItem(id){ planRemove(id); render(); }
-function autoPlanWeek(){
-  const w=curWeek();
-  const pool=candidates().filter(x=>!inWeek(w,x.id)&&stOf(x.id)<2);
-  if(!pool.length){ toast("没有更多可排的动作了"); return; }
-  const add=pool.slice(0,settings.weekly);
-  const t=Date.now();
-  add.forEach((x,i)=>{ w.items[x.id]=t+i; });
-  savePlan(); render(); toast("已排入 "+add.length+" 个知识点 🎯");
-}
-function addGoal(){
-  const i=$("#goalInput"); if(!i) return;
-  const t=i.value.trim(); if(!t) return;
-  const w=curWeek(), now=Date.now();
-  w.goals["g"+now+Math.random().toString(16).slice(2)]={text:t,done:false,cts:now,ts:now,del:false};
-  savePlan(); render(); toast("已添加");
-}
-function toggleGoal(id){
-  const g=curWeek().goals[id]; if(!g) return;
-  g.done=!g.done; g.ts=Date.now(); if(g.done) markedDay();
-  savePlan(); render();
-}
-function delGoal(id){
-  const g=curWeek().goals[id]; if(!g) return;
-  g.del=true; g.ts=Date.now();          // 墓碑：让「删除」也能跨设备生效
-  savePlan(); render();
-}
-function doReview(){
-  const w=curWeek(), ta=$("#reflectInput");
-  if(ta) w.reflection=ta.value;
-  w.reviewedAt=Date.now(); markedDay(); savePlan(); render(); toast("复盘已保存 📖");
-}
-function rollover(){
-  const prev=plan.weeks[weekKeyOf(-1)];
-  if(!prev){ toast("没有可滚入的内容"); return; }
-  const w=curWeek(); let now=Date.now();
-  weekItems(prev).forEach(id=>{ if(!isMastered(id) && !inWeek(w,id)) w.items[id]=now++; });
-  weekGoals(prev).forEach(g=>{ if(!g.done)
-    w.goals["g"+now+Math.random().toString(16).slice(2)]={text:g.text,done:false,cts:now,ts:now,del:false}; });
-  prev.rolledAt=Date.now(); savePlan(); render(); toast("已滚入本周 📦");
-}
-function dismissRollover(){
-  const prev=plan.weeks[weekKeyOf(-1)];
-  if(prev){ prev.rolledAt=Date.now(); savePlan(); render(); }
-}
-
 /* ============ 导入导出 / 主题 / 重置 ============ */
 function exportData(){
   /* 只导出学习数据。同步令牌存在另一个 localStorage 键里，永远不会进这个文件。 */
@@ -2131,6 +1446,7 @@ function importData(file){
 function resetAll(){
   if(!confirm("清空所有进度、笔记、计划与专注记录？此操作不可撤销。")) return;
   progress={}; plan={weeks:{}}; days={}; sessions=[]; timer=null;
+  lastReadId=""; localStorage.removeItem(READ_KEY);
   resetAt=Date.now();                      // 让「清空」也能同步，否则另一台设备会把数据推回来
   saveReset(); saveProgress(true); savePlan(); saveDays(); saveSessions(); saveTimer();
   render(); toast("已清空 🗑️");
@@ -2363,6 +1679,12 @@ function applyReset(){
     if(Math.max(r.sts,r.nts)<resetAt) delete progress[id]; else progress[id]=r; });
   Object.keys(days).forEach(k=>{ if(new Date(k+"T00:00:00").getTime()<resetAt) delete days[k]; });
   sessions=sessions.filter(s=>(s.ts||0)>=resetAt);
+  // 旧打卡只存日期。清空当天，用清空之后的自评或专注重建该日记录。
+  const resetDay=dstr(new Date(resetAt));
+  if(sessions.some(s=>dstr(new Date(s.ts))===resetDay)||
+    Object.values(progress).some(r=>r.st>0&&r.sts>=resetAt&&dstr(new Date(r.sts))===resetDay)){
+    days[resetDay]=true;
+  }
   Object.keys(plan.weeks||{}).forEach(k=>{
     const w=normalizeWeek(plan.weeks[k]);
     Object.keys(w.items).forEach(id=>{ if(Math.abs(w.items[id])<resetAt) delete w.items[id]; });
@@ -2597,7 +1919,7 @@ function paintSyncChip(){
 function renderSyncBanner(){
   const el=$("#syncBanner");
   if(!el) return;
-  if(!syncToken()||!syncMeta.lastErr){ el.innerHTML=""; el.classList.add("hidden"); return; }
+  if(activeTab!=="me"||mapPillar!=="all"||!syncToken()||!syncMeta.lastErr){ el.innerHTML=""; el.classList.add("hidden"); return; }
   el.classList.remove("hidden");
   el.innerHTML='<div class="banner err" style="align-items:flex-start">'+
     '<div style="flex:1;min-width:200px">⚠️ 同步失败：'+esc(syncMeta.lastErr)+
